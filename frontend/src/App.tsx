@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import LiveMapPage from './pages/LiveMapPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AlertsPage from './components/Alerts/AlertsPage';
+import WeatherPage from './pages/WeatherPage';
 
 function App() {
   return (
@@ -73,6 +74,19 @@ function App() {
             >
               Alerts
             </Link>
+            <Link 
+              to="/weather" 
+              style={{ 
+                textDecoration: 'none', 
+                color: '#007bff', 
+                fontWeight: '500',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Weather
+            </Link>
           </div>
         </div>
       </nav>
@@ -83,6 +97,7 @@ function App() {
           <Route path="/live-map" element={<LiveMapPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/weather" element={<WeatherPage />} />
         </Routes>
       </div>
       

@@ -1,0 +1,388 @@
+.weather-chart {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid #e0e6ed;
+}
+
+.weather-chart.loading,
+.weather-chart.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 32px;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  animation: spin 2s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.weather-chart.error h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.error-message {
+  margin: 0 0 20px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.error-details {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: left;
+  max-width: 500px;
+}
+
+.error-details p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: #495057;
+  font-size: 13px;
+}
+
+.error-details ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.error-details li {
+  margin-bottom: 4px;
+}
+
+.retry-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+
+.retry-btn:hover {
+  background: #0056b3;
+}
+
+/* Chart Header */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f3f5;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.chart-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chart-title h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc3545;
+}
+
+.status-dot.connected {
+  background: #28a745;
+}
+
+/* Metric Toggles */
+.metric-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.metric-toggle {
+  padding: 6px 12px;
+  border: 2px solid;
+  border-radius: 20px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.metric-toggle.active {
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Chart Container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  overflow: hidden;
+}
+
+.weather-chart-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* D3 Chart Styles */
+.weather-chart-svg .x-axis,
+.weather-chart-svg .y-axis {
+  font-size: 12px;
+  color: #666;
+}
+
+.weather-chart-svg .x-axis path,
+.weather-chart-svg .y-axis path {
+  stroke: #ccc;
+}
+
+.weather-chart-svg .x-axis .tick line,
+.weather-chart-svg .y-axis .tick line {
+  stroke: #ccc;
+}
+
+.weather-chart-svg .grid-line-horizontal,
+.weather-chart-svg .grid-line-vertical {
+  stroke: #f5f5f5;
+  stroke-dasharray: 2,2;
+}
+
+.weather-chart-svg .line {
+  fill: none;
+  stroke-width: 2.5;
+  transition: stroke-width 0.2s;
+}
+
+.weather-chart-svg .line:hover {
+  stroke-width: 3.5;
+}
+
+.weather-chart-svg .dot {
+  transition: r 0.2s;
+  cursor: pointer;
+}
+
+.weather-chart-svg .dot:hover {
+  r: 5;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.weather-chart-svg .legend text {
+  font-size: 12px;
+  fill: #333;
+}
+
+/* Tooltip Styles */
+.weather-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: white !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  max-width: 200px !important;
+}
+
+.weather-tooltip div:first-child {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #ffc107 !important;
+}
+
+/* Chart Info */
+.chart-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+  font-size: 12px;
+  color: #666;
+}
+
+.data-points,
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .weather-chart {
+    padding: 16px;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .chart-title {
+    align-items: flex-start;
+  }
+  
+  .metric-toggles {
+    justify-content: flex-start;
+  }
+  
+  .metric-toggle {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+  
+  .chart-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-header {
+    gap: 12px;
+  }
+  
+  .chart-title h3 {
+    font-size: 1.2rem;
+  }
+  
+  .metric-toggles {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+  
+  .chart-info {
+    font-size: 11px;
+  }
+}
+
+/* Animation for metric lines */
+@keyframes draw-line {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 0;
+  }
+}
+
+.weather-chart-svg .line {
+  animation: draw-line 1s ease-in-out;
+}
+
+/* Color variations for different metrics */
+.line-air_temperature {
+  stroke: #ff6b6b;
+}
+
+.line-track_temperature {
+  stroke: #4ecdc4;
+}
+
+.line-humidity {
+  stroke: #45b7d1;
+}
+
+.line-pressure {
+  stroke: #96ceb4;
+}
+
+.line-wind_speed {
+  stroke: #ffeaa7;
+}
+
+.line-rainfall {
+  stroke: #74b9ff;
+}
+
+.dot-air_temperature {
+  fill: #ff6b6b;
+}
+
+.dot-track_temperature {
+  fill: #4ecdc4;
+}
+
+.dot-humidity {
+  fill: #45b7d1;
+}
+
+.dot-pressure {
+  fill: #96ceb4;
+}
+
+.dot-wind_speed {
+  fill: #ffeaa7;
+}
+
+.dot-rainfall {
+  fill: #74b9ff;
+}
