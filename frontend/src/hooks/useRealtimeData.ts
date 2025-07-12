@@ -23,16 +23,14 @@ export function useRealtimeData<T>({ topic, sessionKey, enabled = true }: UseRea
         setLoading(true);
         setError(null);
 
-        // Subscribe to the topic
-        await subscribe(topic, sessionKey);
-
         // Set up the callback
         callbackRef.current = (streamData: { data: T; timestamp: string }) => {
           setData(streamData.data);
           setLoading(false);
         };
 
-        webSocketService.on(topic as any, callbackRef.current);
+        // Subscribe to the topic with callback
+        subscribe(topic, callbackRef.current, sessionKey);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to subscribe');
         setLoading(false);
@@ -42,9 +40,6 @@ export function useRealtimeData<T>({ topic, sessionKey, enabled = true }: UseRea
     setupSubscription();
 
     return () => {
-      if (callbackRef.current) {
-        webSocketService.off(topic, callbackRef.current);
-      }
       unsubscribe(topic);
     };
   }, [isConnected, enabled, topic, sessionKey, subscribe, unsubscribe]);

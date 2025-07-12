@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { Driver, Team, Position, Session, Weather, LapTime, PitStop, TeamRadio } from '../types';
+import { Driver, Team, Position, Session, Weather, LapTime, PitStop, TeamRadio } from '../types/f1Types';
 
 class API {
   private client: AxiosInstance;

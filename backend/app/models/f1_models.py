@@ -17,13 +17,20 @@ class Driver(BaseModel):
     name: str = Field(..., min_length=1, description="Full name of the driver")
     abbreviation: str = Field(..., min_length=3, max_length=3, description="3-letter abbreviation")
     team_name: str = Field(..., description="Current team name")
-    team_colour: str = Field(..., pattern=r'^#[0-9A-Fa-f]{6}$', description="Team color in hex format")
+    team_colour: str = Field(..., description="Team color in hex format")
     headshot_url: Optional[str] = Field(None, description="URL to driver headshot image")
     country_code: Optional[str] = Field(None, min_length=2, max_length=3, description="Country code")
     
     @validator('abbreviation')
     def validate_abbreviation(cls, v):
         return v.upper()
+    
+    @validator('team_colour')
+    def validate_team_colour(cls, v):
+        # Add # prefix if not present
+        if v and not v.startswith('#'):
+            return f'#{v}'
+        return v
     
     class Config:
         json_schema_extra = {
@@ -40,8 +47,15 @@ class Driver(BaseModel):
 
 class Team(BaseModel):
     team_name: str = Field(..., description="Team name")
-    team_colour: str = Field(..., pattern=r'^#[0-9A-Fa-f]{6}$', description="Team color in hex format")
+    team_colour: str = Field(..., description="Team color in hex format")
     drivers: List[Dict[str, Any]] = Field(default_factory=list, description="List of drivers in the team")
+    
+    @validator('team_colour')
+    def validate_team_colour(cls, v):
+        # Add # prefix if not present
+        if v and not v.startswith('#'):
+            return f'#{v}'
+        return v
     
     class Config:
         json_schema_extra = {

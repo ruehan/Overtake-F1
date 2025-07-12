@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
-import { Position, Weather, LapTime, PitStop, TeamRadio } from '../types';
+import { Position, Weather, LapTime, PitStop, TeamRadio, Driver } from '../types/f1Types';
 
-export type SubscriptionTopic = 'positions' | 'weather' | 'lap_times' | 'pit_stops' | 'team_radio';
+export type SubscriptionTopic = 'positions' | 'weather' | 'lap_times' | 'pit_stops' | 'team_radio' | 'drivers';
 
 interface StreamData<T> {
   data: T;
@@ -90,34 +90,29 @@ class WebSocketService {
     this.socket.on('team_radio', (data: StreamData<TeamRadio[]>) => {
       this.emit('team_radio', data);
     });
+
+    // Drivers stream
+    this.socket.on('drivers', (data: StreamData<Driver[]>) => {
+      this.emit('drivers', data);
+    });
   }
 
-  subscribe(topic: SubscriptionTopic, sessionKey: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.socket?.connected) {
-        reject(new Error('WebSocket not connected'));
-        return;
-      }
+  subscribe(topic: SubscriptionTopic, callback: (data: any) => void, sessionKey?: number): void {
+    if (!this.socket?.connected) {
+      throw new Error('WebSocket not connected');
+    }
 
+    // Add callback to the topic
+    this.on(topic, callback);
+
+    // Subscribe to the topic if not already subscribed
+    if (sessionKey) {
       const subscriptionKey = `${topic}_${sessionKey}`;
-      if (this.subscriptions.has(subscriptionKey)) {
-        resolve();
-        return;
+      if (!this.subscriptions.has(subscriptionKey)) {
+        this.socket.emit('subscribe', { topic, session_key: sessionKey });
+        this.subscriptions.add(subscriptionKey);
       }
-
-      this.socket.emit('subscribe', { topic, session_key: sessionKey });
-
-      this.socket.once('subscribed', (data: { topic: string; session_key: number }) => {
-        if (data.topic === topic && data.session_key === sessionKey) {
-          this.subscriptions.add(subscriptionKey);
-          resolve();
-        }
-      });
-
-      setTimeout(() => {
-        reject(new Error('Subscription timeout'));
-      }, 5000);
-    });
+    }
   }
 
   unsubscribe(topic: SubscriptionTopic): void {
@@ -133,11 +128,7 @@ class WebSocketService {
     });
   }
 
-  on(event: 'positions', callback: StreamCallback<Position[]>): void;
-  on(event: 'weather', callback: StreamCallback<Weather>): void;
-  on(event: 'lap_times', callback: StreamCallback<LapTime[]>): void;
-  on(event: 'pit_stops', callback: StreamCallback<PitStop[]>): void;
-  on(event: 'team_radio', callback: StreamCallback<TeamRadio[]>): void;
+  on(event: SubscriptionTopic, callback: Function): void;
   on(event: string, callback: Function): void {
     if (!this.callbacks.has(event)) {
       this.callbacks.set(event, new Set());

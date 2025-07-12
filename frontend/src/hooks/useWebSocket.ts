@@ -24,11 +24,11 @@ export const useWebSocket = () => {
     };
   }, []);
 
-  const subscribe = useCallback(async (topic: SubscriptionTopic, sessionKey: number) => {
+  const subscribe = useCallback((topic: SubscriptionTopic, callback: (data: any) => void, sessionKey?: number) => {
     if (!isConnected) {
       throw new Error('WebSocket not connected');
     }
-    return webSocketService.subscribe(topic, sessionKey);
+    return webSocketService.subscribe(topic, callback, sessionKey);
   }, [isConnected]);
 
   const unsubscribe = useCallback((topic: SubscriptionTopic) => {

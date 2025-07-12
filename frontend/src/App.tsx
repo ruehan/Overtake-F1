@@ -1,67 +1,57 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
-import api from './services/api';
-import { Session, Driver } from './types';
+import Dashboard from './pages/Dashboard';
+import LiveMapPage from './pages/LiveMapPage';
 
 function App() {
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch current session
-        const session = await api.getCurrentSession();
-        setCurrentSession(session);
-
-        // Fetch drivers for current session
-        if (session?.session_key) {
-          const driversData = await api.getDrivers(session.session_key);
-          setDrivers(driversData);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <div className="App">Loading...</div>;
-  if (error) return <div className="App">Error: {error}</div>;
-
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>OpenF1 Dashboard</h1>
-        {currentSession && (
-          <div>
-            <h2>{currentSession.session_name}</h2>
-            <p>{currentSession.circuit} - {currentSession.country}</p>
-          </div>
-        )}
-        <div className="drivers-grid">
-          <h3>Drivers</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            {drivers.map(driver => (
-              <div key={driver.driver_number} style={{ 
-                border: '1px solid #ccc', 
-                padding: '1rem',
-                borderLeft: `4px solid ${driver.team_colour}`
-              }}>
-                <h4>#{driver.driver_number} {driver.abbreviation}</h4>
-                <p>{driver.name}</p>
-                <p style={{ fontSize: '0.9em', color: '#666' }}>{driver.team_name}</p>
-              </div>
-            ))}
+      <nav style={{ 
+        padding: '1rem', 
+        background: '#f8f9fa', 
+        borderBottom: '1px solid #dee2e6',
+        marginBottom: '1rem'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '2rem', alignItems: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>OpenF1 Dashboard</h1>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Link 
+              to="/" 
+              style={{ 
+                textDecoration: 'none', 
+                color: '#007bff', 
+                fontWeight: '500',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/live-map" 
+              style={{ 
+                textDecoration: 'none', 
+                color: '#007bff', 
+                fontWeight: '500',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Live Map
+            </Link>
           </div>
         </div>
-      </header>
+      </nav>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/live-map" element={<LiveMapPage />} />
+        </Routes>
+      </div>
     </div>
   );
 }

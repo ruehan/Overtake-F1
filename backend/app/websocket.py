@@ -24,7 +24,8 @@ subscriptions: Dict[str, Set[str]] = {
     "weather": set(),
     "lap_times": set(),
     "pit_stops": set(),
-    "team_radio": set()
+    "team_radio": set(),
+    "drivers": set()
 }
 
 # Background tasks
@@ -111,6 +112,9 @@ async def stream_data(topic: str, session_key: int):
             
             elif topic == "team_radio":
                 data = await openf1_client.get_team_radio(session_key=session_key)
+            
+            elif topic == "drivers":
+                data = await openf1_client.get_drivers(session_key=session_key)
             
             if data:
                 # Emit to all subscribers of this topic

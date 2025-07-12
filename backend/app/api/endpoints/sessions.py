@@ -30,10 +30,13 @@ async def get_sessions(
 @router.get("/current", response_model=Dict[str, Any])
 async def get_current_session():
     try:
-        # Get sessions and find the most recent one
-        sessions = await openf1_client.get_sessions()
+        # Get recent sessions from this year
+        from datetime import datetime
+        current_year = datetime.utcnow().year
+        
+        sessions = await openf1_client.get_sessions(year=current_year)
         if not sessions:
-            raise HTTPException(status_code=404, detail="No sessions found")
+            raise HTTPException(status_code=404, detail="No current sessions available")
         
         # Sort by date and get the latest
         sorted_sessions = sorted(
@@ -42,21 +45,36 @@ async def get_current_session():
             reverse=True
         )
         
-        # Find the first session that's not in the future
-        from datetime import datetime
+        # Check if there are any recent sessions (within last 7 days)
         now = datetime.utcnow()
+        recent_sessions = []
         
-        for session in sorted_sessions:
+        for session in sorted_sessions[:10]:  # Check last 10 sessions
             session_date = session.get("date")
             if session_date:
                 try:
                     session_dt = datetime.fromisoformat(session_date.replace("Z", "+00:00"))
-                    if session_dt <= now:
-                        return session
+                    time_diff = (now - session_dt).days
+                    if time_diff <= 7:  # Within last 7 days
+                        recent_sessions.append({
+                            **session,
+                            "is_active": time_diff <= 1,  # Active if within last day
+                            "time_since": f"{time_diff} days ago" if time_diff > 0 else "Today"
+                        })
                 except:
                     continue
         
-        return sorted_sessions[0]  # Return latest if none found
+        if recent_sessions:
+            return recent_sessions[0]
+        else:
+            # Return the latest session with inactive status
+            latest_session = sorted_sessions[0]
+            return {
+                **latest_session,
+                "is_active": False,
+                "time_since": "No recent sessions"
+            }
+            
     except OpenF1APIException as e:
         raise HTTPException(
             status_code=e.status_code or 500,
