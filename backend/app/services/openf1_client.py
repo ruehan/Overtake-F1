@@ -6,6 +6,7 @@ from asyncio_throttle import Throttler
 
 from app.config import settings
 from app.core.exceptions import OpenF1APIException
+from app.services.cache_service import cache_service, cached
 
 class OpenF1Client:
     def __init__(self):
@@ -65,12 +66,14 @@ class OpenF1Client:
             except Exception as e:
                 raise OpenF1APIException(f"Unexpected error: {str(e)}")
     
+    @cached(namespace="drivers", ttl_seconds=600)  # Cache for 10 minutes
     async def get_drivers(self, session_key: Optional[int] = None) -> List[Dict[str, Any]]:
         params = {}
         if session_key:
             params["session_key"] = session_key
         return await self._make_request("GET", "/drivers", params=params)
     
+    @cached(namespace="teams", ttl_seconds=600)  # Cache for 10 minutes
     async def get_teams(self, session_key: Optional[int] = None) -> List[Dict[str, Any]]:
         params = {}
         if session_key:
@@ -109,6 +112,7 @@ class OpenF1Client:
             params["date"] = date.isoformat()
         return await self._make_request("GET", "/position", params=params)
     
+    @cached(namespace="sessions", ttl_seconds=3600)  # Cache for 1 hour
     async def get_sessions(
         self,
         year: Optional[int] = None,

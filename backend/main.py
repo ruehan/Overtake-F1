@@ -10,6 +10,8 @@ from app.api import api_router
 from app.websocket import sio_app
 from app.core.middleware import ErrorHandlingMiddleware, RateLimitMiddleware, LoggingMiddleware
 from app.services.openf1_client import openf1_client
+from app.core.database import init_database, close_database
+from app.services.cache_service import cache_service
 
 # Configure logging
 logging.basicConfig(
@@ -20,10 +22,20 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"Starting OpenF1 Dashboard API...")
+    
+    # Initialize database
+    await init_database()
+    
+    # Initialize cache service
+    await cache_service.connect()
+    
     yield
+    
     print("Shutting down...")
-    # Close OpenF1 client
+    # Close services
     await openf1_client.close()
+    await cache_service.close()
+    await close_database()
 
 app = FastAPI(
     title="OpenF1 Dashboard API",
