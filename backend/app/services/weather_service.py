@@ -49,7 +49,7 @@ class WeatherService:
                 return None
                 
             # Get the most recent weather data
-            latest = max(weather_data, key=lambda x: x.get("timestamp", 0))
+            latest = max(weather_data, key=lambda x: x.get("date", ""))
             
             return WeatherCondition(
                 air_temperature=latest.get("air_temperature", 0),
@@ -59,7 +59,7 @@ class WeatherService:
                 wind_speed=latest.get("wind_speed", 0),
                 wind_direction=latest.get("wind_direction"),
                 rainfall=latest.get("rainfall", 0),
-                timestamp=datetime.fromisoformat(latest.get("timestamp", "").replace("Z", "+00:00")),
+                timestamp=datetime.fromisoformat(latest.get("date", "").replace("Z", "+00:00")),
                 session_key=session_key
             )
             
@@ -70,13 +70,13 @@ class WeatherService:
     async def get_weather_history(self, session_key: int, hours: int = 3) -> List[WeatherCondition]:
         """Get weather history for the specified time period"""
         try:
+            weather_data = await openf1_client.get_weather(
+                session_key=session_key
+            )
+            
+            # Filter data by time range locally
             end_time = datetime.utcnow()
             start_time = end_time - timedelta(hours=hours)
-            
-            weather_data = await openf1_client.get_weather(
-                session_key=session_key,
-                date=start_time
-            )
             
             if not weather_data:
                 return []
@@ -85,23 +85,30 @@ class WeatherService:
             conditions = []
             for data in weather_data:
                 try:
-                    timestamp = datetime.fromisoformat(data.get("timestamp", "").replace("Z", "+00:00"))
-                    if start_time <= timestamp <= end_time:
-                        conditions.append(WeatherCondition(
-                            air_temperature=data.get("air_temperature", 0),
-                            track_temperature=data.get("track_temperature", 0),
-                            humidity=data.get("humidity", 0),
-                            pressure=data.get("pressure", 0),
-                            wind_speed=data.get("wind_speed", 0),
-                            wind_direction=data.get("wind_direction"),
-                            rainfall=data.get("rainfall", 0),
-                            timestamp=timestamp,
-                            session_key=session_key
-                        ))
+                    timestamp = datetime.fromisoformat(data.get("date", "").replace("Z", "+00:00"))
+                    # For historical data, just take the most recent data points instead of filtering by time
+                    conditions.append(WeatherCondition(
+                        air_temperature=data.get("air_temperature", 0),
+                        track_temperature=data.get("track_temperature", 0),
+                        humidity=data.get("humidity", 0),
+                        pressure=data.get("pressure", 0),
+                        wind_speed=data.get("wind_speed", 0),
+                        wind_direction=data.get("wind_direction"),
+                        rainfall=data.get("rainfall", 0),
+                        timestamp=timestamp,
+                        session_key=session_key
+                    ))
                 except Exception as e:
                     continue  # Skip invalid data points
             
-            return sorted(conditions, key=lambda x: x.timestamp)
+            # Sort by timestamp and take the most recent data points
+            sorted_conditions = sorted(conditions, key=lambda x: x.timestamp, reverse=True)
+            # Return the most recent data points (limit based on hours requested)
+            max_points = hours * 20  # Approximate 20 points per hour
+            return sorted_conditions[:max_points][::-1]  # Reverse to get chronological order
+            
+            # This line is now handled above
+            pass
             
         except Exception as e:
             print(f"Error getting weather history: {e}")

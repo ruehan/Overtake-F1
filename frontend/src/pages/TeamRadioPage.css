@@ -1,0 +1,536 @@
+.team-radio-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Header */
+.radio-page-header {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e6ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.header-content h1 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-content h1::before {
+  content: '📻';
+  font-size: 1.8rem;
+}
+
+.header-content p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.radio-controls {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.session-select,
+.driver-select {
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #fff;
+  color: #495057;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 180px;
+}
+
+.session-select:focus,
+.driver-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.session-select:hover,
+.driver-select:hover {
+  border-color: #ced4da;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #495057;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #007bff;
+}
+
+/* Tabs */
+.radio-tabs {
+  display: flex;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e6ed;
+  gap: 4px;
+}
+
+.tab-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tab-button:hover {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.tab-button.active {
+  background: #007bff;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+}
+
+/* Content */
+.radio-content {
+  margin-bottom: 24px;
+}
+
+/* Messages Tab */
+.messages-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.messages-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+}
+
+.messages-section {
+  min-height: 600px;
+}
+
+.player-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e6ed;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.player-section h3 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Statistics Tab */
+.statistics-tab {
+  padding: 0;
+}
+
+.stats-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-loading .loading-spinner {
+  font-size: 3rem;
+  animation: pulse 2s ease-in-out infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e6ed;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.featured {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fff9c4, #fff);
+}
+
+.stat-card.wide {
+  grid-column: span 2;
+}
+
+.stat-header {
+  margin-bottom: 16px;
+}
+
+.stat-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.stat-description {
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.driver-stat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.driver-stat .driver-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.driver-stat .driver-details {
+  flex: 1;
+}
+
+.driver-stat .driver-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.driver-stat .message-count {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.drivers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.driver-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.driver-row:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.driver-row .driver-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.driver-row .driver-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.driver-row .driver-details {
+  flex: 1;
+}
+
+.driver-row .driver-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.driver-row .team-name {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.message-count-badge {
+  background: #007bff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Timeline Tab */
+.timeline-tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.timeline-placeholder {
+  background: #fff;
+  border-radius: 12px;
+  padding: 60px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px dashed #e9ecef;
+  max-width: 500px;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.timeline-placeholder h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.timeline-placeholder p {
+  margin: 0 0 8px 0;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.coming-soon {
+  color: #ffc107 !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  margin-top: 16px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .messages-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .player-section {
+    position: relative;
+    top: auto;
+  }
+  
+  .stat-card.wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .team-radio-page {
+    padding: 16px;
+  }
+  
+  .radio-page-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .radio-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .control-group {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .session-select,
+  .driver-select {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .radio-tabs {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .tab-button {
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .timeline-placeholder {
+    padding: 40px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-radio-page {
+    padding: 12px;
+  }
+  
+  .radio-page-header {
+    padding: 16px;
+  }
+  
+  .header-content h1 {
+    font-size: 1.6rem;
+  }
+  
+  .header-content p {
+    font-size: 1rem;
+  }
+  
+  .radio-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .control-group {
+    width: 100%;
+  }
+  
+  .player-section {
+    padding: 16px;
+  }
+  
+  .driver-row {
+    padding: 10px;
+  }
+  
+  .driver-row .driver-number {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .placeholder-icon {
+    font-size: 3rem;
+  }
+  
+  .timeline-placeholder h3 {
+    font-size: 1.3rem;
+  }
+}

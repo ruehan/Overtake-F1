@@ -1,13 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WeatherWidget from '../components/Weather/WeatherWidget';
 import WeatherChart from '../components/Weather/WeatherChart';
 import TireStrategyPanel from '../components/Weather/TireStrategyPanel';
 import './WeatherPage.css';
 
+interface WeatherSessionOption {
+  session_key: number;
+  location: string;
+  session_name: string;
+  weather_data_count: number;
+  date_start: string;
+}
+
 const WeatherPage: React.FC = () => {
   const [sessionKey, setSessionKey] = useState(9222);
   const [chartHours, setChartHours] = useState(3);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'strategy'>('overview');
+  const [availableSessions, setAvailableSessions] = useState<WeatherSessionOption[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAvailableSessions();
+  }, []);
+
+  const fetchAvailableSessions = async () => {
+    try {
+      setSessionsLoading(true);
+      const response = await fetch('http://localhost:8000/api/v1/sessions/with-weather?limit=20');
+      
+      if (response.ok) {
+        const sessions = await response.json();
+        setAvailableSessions(sessions);
+        
+        // Set the first available session as default if we have sessions
+        if (sessions.length > 0) {
+          setSessionKey(sessions[0].session_key);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching available sessions:', err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
 
   return (
     <div className="weather-page">
@@ -25,10 +60,19 @@ const WeatherPage: React.FC = () => {
               value={sessionKey} 
               onChange={(e) => setSessionKey(Number(e.target.value))}
               className="session-select"
+              disabled={sessionsLoading}
             >
-              <option value={9222}>Current Session (9222)</option>
-              <option value={9221}>Previous Session (9221)</option>
-              <option value={9220}>Practice Session (9220)</option>
+              {sessionsLoading ? (
+                <option value="">Loading sessions...</option>
+              ) : availableSessions.length > 0 ? (
+                availableSessions.map(session => (
+                  <option key={session.session_key} value={session.session_key}>
+                    {session.location} {session.session_name} ({session.weather_data_count} data points)
+                  </option>
+                ))
+              ) : (
+                <option value={9222}>Current Session (Fallback)</option>
+              )}
             </select>
           </div>
           

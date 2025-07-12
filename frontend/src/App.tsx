@@ -8,6 +8,7 @@ import LiveMapPage from './pages/LiveMapPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AlertsPage from './components/Alerts/AlertsPage';
 import WeatherPage from './pages/WeatherPage';
+import TeamRadioPage from './pages/TeamRadioPage';
 
 function App() {
   return (
@@ -87,6 +88,19 @@ function App() {
             >
               Weather
             </Link>
+            <Link 
+              to="/team-radio" 
+              style={{ 
+                textDecoration: 'none', 
+                color: '#007bff', 
+                fontWeight: '500',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Team Radio
+            </Link>
           </div>
         </div>
       </nav>
@@ -98,6 +112,7 @@ function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/weather" element={<WeatherPage />} />
+          <Route path="/team-radio" element={<TeamRadioPage />} />
         </Routes>
       </div>
       
