@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Position, Weather, LapTime, PitStop, TeamRadio, Driver } from '../types/f1Types';
 
-export type SubscriptionTopic = 'positions' | 'weather' | 'lap_times' | 'pit_stops' | 'team_radio' | 'drivers';
+export type SubscriptionTopic = 'positions' | 'weather' | 'lap_times' | 'pit_stops' | 'team_radio' | 'drivers' | 'race_events';
 
 interface StreamData<T> {
   data: T;
@@ -29,11 +29,13 @@ class WebSocketService {
 
       this.socket.on('connect', () => {
         console.log('WebSocket connected');
+        this.emit('connected', true);
         resolve();
       });
 
       this.socket.on('disconnect', () => {
         console.log('WebSocket disconnected');
+        this.emit('disconnect', true);
       });
 
       this.socket.on('connect_error', (error) => {
@@ -95,23 +97,29 @@ class WebSocketService {
     this.socket.on('drivers', (data: StreamData<Driver[]>) => {
       this.emit('drivers', data);
     });
+
+    // Race events stream
+    this.socket.on('race_event', (data: any) => {
+      this.emit('race_event', data);
+    });
   }
 
-  subscribe(topic: SubscriptionTopic, callback: (data: any) => void, sessionKey?: number): void {
+  subscribe(topic: SubscriptionTopic, callback?: (data: any) => void, sessionKey?: number): void {
     if (!this.socket?.connected) {
       throw new Error('WebSocket not connected');
     }
 
-    // Add callback to the topic
-    this.on(topic, callback);
+    // Add callback to the topic if provided
+    if (callback) {
+      this.on(topic, callback);
+    }
 
     // Subscribe to the topic if not already subscribed
-    if (sessionKey) {
-      const subscriptionKey = `${topic}_${sessionKey}`;
-      if (!this.subscriptions.has(subscriptionKey)) {
-        this.socket.emit('subscribe', { topic, session_key: sessionKey });
-        this.subscriptions.add(subscriptionKey);
-      }
+    const subscriptionKey = sessionKey ? `${topic}_${sessionKey}` : topic;
+    if (!this.subscriptions.has(subscriptionKey)) {
+      const subscribeData = sessionKey ? { topic, session_key: sessionKey } : { topic };
+      this.socket.emit('subscribe', subscribeData);
+      this.subscriptions.add(subscriptionKey);
     }
   }
 
@@ -128,7 +136,6 @@ class WebSocketService {
     });
   }
 
-  on(event: SubscriptionTopic, callback: Function): void;
   on(event: string, callback: Function): void {
     if (!this.callbacks.has(event)) {
       this.callbacks.set(event, new Set());
@@ -159,4 +166,6 @@ class WebSocketService {
   }
 }
 
-export default new WebSocketService();
+const websocketService = new WebSocketService();
+export { websocketService };
+export default websocketService;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import { useWebSocket } from '../../contexts/WebSocketContext';
 import { Position, Driver } from '../../types/f1Types';
 import MapLegend from './MapLegend';
 import './F1LiveMap.css';
@@ -23,18 +23,26 @@ const F1LiveMap: React.FC<F1LiveMapProps> = ({ sessionKey, circuitId = 'bahrain'
   // WebSocket data subscriptions
   useEffect(() => {
     if (isConnected && sessionKey) {
-      subscribe('positions', (data: any) => {
-        setPositions(data.data || data);
-      }, sessionKey);
+      try {
+        subscribe('positions', (data: any) => {
+          setPositions(data.data || data);
+        }, sessionKey);
 
-      subscribe('drivers', (data: any) => {
-        setDrivers(data.data || data);
-      }, sessionKey);
+          subscribe('drivers', (data: any) => {
+            setDrivers(data.data || data);
+          }, sessionKey);
+        } catch (error) {
+          console.error('Error subscribing to WebSocket topics:', error);
+        }
 
-      return () => {
-        unsubscribe('positions');
-        unsubscribe('drivers');
-      };
+        return () => {
+          try {
+            unsubscribe('positions');
+            unsubscribe('drivers');
+          } catch (error) {
+            console.error('Error unsubscribing from WebSocket topics:', error);
+          }
+        };
     }
   }, [isConnected, sessionKey, subscribe, unsubscribe]);
 
