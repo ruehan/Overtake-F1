@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -21,11 +21,13 @@ class Driver(BaseModel):
     headshot_url: Optional[str] = Field(None, description="URL to driver headshot image")
     country_code: Optional[str] = Field(None, min_length=2, max_length=3, description="Country code")
     
-    @validator('abbreviation')
+    @field_validator('abbreviation')
+    @classmethod
     def validate_abbreviation(cls, v):
         return v.upper()
     
-    @validator('team_colour')
+    @field_validator('team_colour')
+    @classmethod
     def validate_team_colour(cls, v):
         # Add # prefix if not present
         if v and not v.startswith('#'):
@@ -50,7 +52,8 @@ class Team(BaseModel):
     team_colour: str = Field(..., description="Team color in hex format")
     drivers: List[Dict[str, Any]] = Field(default_factory=list, description="List of drivers in the team")
     
-    @validator('team_colour')
+    @field_validator('team_colour')
+    @classmethod
     def validate_team_colour(cls, v):
         # Add # prefix if not present
         if v and not v.startswith('#'):
@@ -156,8 +159,9 @@ class LapTime(BaseModel):
     is_personal_best: Optional[bool] = Field(False, description="Is this a personal best lap")
     timestamp: int = Field(..., description="Unix timestamp")
     
-    @validator('lap_time')
-    def validate_lap_time(cls, v, values):
+    @field_validator('lap_time')
+    @classmethod
+    def validate_lap_time(cls, v):
         # Reasonable lap time validation (between 1 minute and 5 minutes)
         if not (60 <= v <= 300):
             raise ValueError('Lap time must be between 60 and 300 seconds')
@@ -185,7 +189,8 @@ class PitStop(BaseModel):
     lap_number: int = Field(..., ge=1, description="Lap number when pit stop occurred")
     timestamp: int = Field(..., description="Unix timestamp")
     
-    @validator('pit_duration')
+    @field_validator('pit_duration')
+    @classmethod
     def validate_pit_duration(cls, v):
         # Reasonable pit stop duration (2-60 seconds)
         if not (2 <= v <= 60):

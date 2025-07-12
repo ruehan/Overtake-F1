@@ -1,0 +1,139 @@
+.data-type-selector {
+  min-width: 300px;
+}
+
+.selector-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.data-type-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.data-type-option {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.75rem;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.data-type-option:hover {
+  border-color: #007bff;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.data-type-option.selected {
+  border-color: #007bff;
+  background: #e7f3ff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.option-icon {
+  font-size: 1.25rem;
+}
+
+.option-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.option-description {
+  font-size: 0.75rem;
+  color: #666;
+  line-height: 1.3;
+}
+
+.data-type-option.selected .option-label {
+  color: #007bff;
+}
+
+.data-type-option.selected .option-description {
+  color: #0056b3;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .data-type-selector {
+    min-width: 100%;
+  }
+  
+  .data-type-options {
+    flex-direction: column;
+  }
+  
+  .data-type-option {
+    min-width: auto;
+    padding: 0.5rem;
+  }
+  
+  .option-header {
+    gap: 0.375rem;
+  }
+  
+  .option-icon {
+    font-size: 1rem;
+  }
+  
+  .option-label {
+    font-size: 0.8rem;
+  }
+  
+  .option-description {
+    font-size: 0.7rem;
+  }
+}
+
+/* Animation for selection */
+.data-type-option {
+  position: relative;
+  overflow: hidden;
+}
+
+.data-type-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 123, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.data-type-option.selected::before {
+  left: 100%;
+}
+
+/* Focus styles for accessibility */
+.data-type-option:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Active state */
+.data-type-option:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}

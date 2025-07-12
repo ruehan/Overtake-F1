@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import Dashboard from './pages/Dashboard';
 import LiveMapPage from './pages/LiveMapPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
   return (
@@ -42,6 +43,19 @@ function App() {
             >
               Live Map
             </Link>
+            <Link 
+              to="/analytics" 
+              style={{ 
+                textDecoration: 'none', 
+                color: '#007bff', 
+                fontWeight: '500',
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Analytics
+            </Link>
           </div>
         </div>
       </nav>
@@ -50,6 +64,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/live-map" element={<LiveMapPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
         </Routes>
       </div>
     </div>

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -51,7 +51,8 @@ class UserPreferences(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Created timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last updated timestamp")
     
-    @validator('favorite_drivers')
+    @field_validator('favorite_drivers')
+    @classmethod
     def validate_favorite_drivers(cls, v):
         # Validate driver numbers are in valid range
         for driver_num in v:
@@ -59,7 +60,8 @@ class UserPreferences(BaseModel):
                 raise ValueError(f'Invalid driver number: {driver_num}')
         return list(set(v))  # Remove duplicates
     
-    @validator('theme')
+    @field_validator('theme')
+    @classmethod
     def validate_theme(cls, v):
         if v not in ['light', 'dark', 'auto']:
             raise ValueError('Theme must be light, dark, or auto')

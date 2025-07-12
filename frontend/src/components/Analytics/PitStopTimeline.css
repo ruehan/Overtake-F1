@@ -1,0 +1,196 @@
+.pit-stop-timeline-container {
+  width: 100%;
+  padding: 1.5rem;
+}
+
+.chart-header {
+  margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.chart-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.pit-stop-timeline-svg {
+  width: 100%;
+  height: 400px;
+}
+
+/* Driver lanes */
+.driver-lane {
+  transition: opacity 0.2s ease;
+}
+
+.driver-lane:hover {
+  opacity: 0.2 !important;
+}
+
+/* Pit stops */
+.pit-stop {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pit-stop:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+/* Connection lines */
+.pit-stop-connection {
+  pointer-events: none;
+}
+
+/* Axis styles */
+.pit-stop-timeline-svg .domain {
+  stroke: #666;
+  stroke-width: 1;
+}
+
+.pit-stop-timeline-svg .tick line {
+  stroke: #666;
+  stroke-width: 1;
+}
+
+.pit-stop-timeline-svg .tick text {
+  fill: #666;
+  font-size: 11px;
+}
+
+/* Grid styles */
+.grid line {
+  stroke: #e0e0e0;
+  stroke-dasharray: 2,2;
+  stroke-width: 1;
+}
+
+.grid path {
+  stroke-width: 0;
+}
+
+/* Legend styles */
+.legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #333;
+}
+
+.legend-text {
+  font-size: 11px;
+  fill: #333;
+  font-weight: 500;
+}
+
+.axis-label {
+  font-size: 12px;
+  fill: #666;
+  font-weight: 500;
+}
+
+.no-data-text {
+  font-size: 14px;
+  fill: #999;
+  font-weight: 500;
+}
+
+/* Tooltip styles */
+.pit-stop-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  max-width: 250px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .pit-stop-timeline-container {
+    padding: 1rem;
+  }
+  
+  .chart-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .chart-header p {
+    font-size: 0.85rem;
+  }
+  
+  .pit-stop-timeline-svg {
+    height: 350px;
+  }
+  
+  .legend-text {
+    font-size: 10px;
+  }
+  
+  .axis-label {
+    font-size: 11px;
+  }
+}
+
+/* Animation for pit stops */
+.pit-stop {
+  opacity: 0;
+  animation: pitStopAppear 0.6s ease-out forwards;
+}
+
+.pit-stop:nth-child(1) { animation-delay: 0.1s; }
+.pit-stop:nth-child(2) { animation-delay: 0.2s; }
+.pit-stop:nth-child(3) { animation-delay: 0.3s; }
+.pit-stop:nth-child(4) { animation-delay: 0.4s; }
+.pit-stop:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes pitStopAppear {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Connection line animation */
+.pit-stop-connection {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawConnection 1.5s ease-in-out forwards;
+  animation-delay: 0.8s;
+}
+
+@keyframes drawConnection {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Interactive states */
+.pit-stop-timeline-container:hover .driver-lane {
+  opacity: 0.05;
+}
+
+.pit-stop-timeline-container:hover .pit-stop:not(:hover) {
+  opacity: 0.7;
+}
+
+.pit-stop-timeline-container:hover .pit-stop:hover {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+}

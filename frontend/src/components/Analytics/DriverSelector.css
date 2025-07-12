@@ -1,0 +1,289 @@
+.driver-selector {
+  position: relative;
+  min-width: 250px;
+}
+
+.selector-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.selector-container {
+  position: relative;
+}
+
+.selector-button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.selector-button:hover {
+  border-color: #007bff;
+}
+
+.selector-button:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.selector-text {
+  flex: 1;
+  text-align: left;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selector-arrow {
+  font-size: 0.75rem;
+  color: #666;
+  transition: transform 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.selector-arrow.open {
+  transform: rotate(180deg);
+}
+
+.selector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.driver-search {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.driver-search:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.select-all-button {
+  width: 100%;
+  padding: 0.5rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.select-all-button:hover {
+  background: #0056b3;
+}
+
+.drivers-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.driver-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.driver-item:hover {
+  background: #f8f9fa;
+}
+
+.driver-item.selected {
+  background: #e7f3ff;
+  border-left: 4px solid #007bff;
+}
+
+.driver-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.driver-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.driver-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.5rem;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.driver-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.driver-abbr {
+  font-family: monospace;
+  font-weight: bold;
+  color: #666;
+  font-size: 0.75rem;
+  background: #f0f0f0;
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+}
+
+.driver-team {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.team-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-container {
+  margin-left: 0.5rem;
+}
+
+.driver-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.no-drivers {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.selection-summary {
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+}
+
+.selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .driver-selector {
+    min-width: 200px;
+  }
+  
+  .selector-dropdown {
+    max-height: 300px;
+  }
+  
+  .drivers-list {
+    max-height: 200px;
+  }
+  
+  .driver-item {
+    padding: 0.5rem;
+  }
+  
+  .driver-name {
+    font-size: 0.8rem;
+  }
+  
+  .driver-team {
+    font-size: 0.7rem;
+  }
+}
+
+/* Custom scrollbar for drivers list */
+.drivers-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drivers-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.drivers-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.drivers-list::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Animation for dropdown */
+.selector-dropdown {
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
