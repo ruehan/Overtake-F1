@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Race {
   round: number;
@@ -21,6 +22,7 @@ interface NextRaceData {
 }
 
 const CalendarPage: React.FC = () => {
+  const { t, translateCountry } = useLanguage();
   const [races, setRaces] = useState<Race[]>([]);
   const [nextRace, setNextRace] = useState<Race | null>(null);
   const [currentRace, setCurrentRace] = useState<Race | null>(null);
@@ -84,25 +86,25 @@ const CalendarPage: React.FC = () => {
     const raceDate = new Date(race.date);
     
     if (currentRace && race.round === currentRace.round) {
-      return { status: 'live', label: 'LIVE' };
+      return { status: 'live', label: t('calendar.live') };
     } else if (raceDate > today) {
-      return { status: 'upcoming', label: 'UPCOMING' };
+      return { status: 'upcoming', label: t('calendar.upcoming') };
     } else {
-      return { status: 'completed', label: 'COMPLETED' };
+      return { status: 'completed', label: t('calendar.completed') };
     }
   };
 
-  if (loading) return <div className="f1-loading">Loading Calendar...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('nav.calendar')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
 
   return (
     <div>
-      <h1 className="f1-card-title">🏁 F1 Race Calendar</h1>
+      <h1 className="f1-card-title">🏁 F1 {t('nav.calendar')}</h1>
       
       {/* Year Selector */}
       <div className="f1-card">
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <label>Season:</label>
+          <label>{t('standings.season')}:</label>
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -126,20 +128,20 @@ const CalendarPage: React.FC = () => {
         <div className="f1-grid f1-grid-2">
           {currentRace && (
             <div className="f1-card">
-              <h3 className="f1-card-title">🔴 Current Race Weekend</h3>
+              <h3 className="f1-card-title">{t('dashboard.currentRace')}</h3>
               <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{currentRace.race_name}</h2>
-              <p style={{ color: '#ccc', marginBottom: '1rem' }}>{currentRace.circuit_name}, {currentRace.country}</p>
-              <div className="f1-status live">LIVE</div>
+              <p style={{ color: '#ccc', marginBottom: '1rem' }}>{currentRace.circuit_name}, {translateCountry(currentRace.country)}</p>
+              <div className="f1-status live">{t('data.raceWeekend')}</div>
             </div>
           )}
           
           {nextRace && (
             <div className="f1-card">
-              <h3 className="f1-card-title">⏭️ Next Race</h3>
+              <h3 className="f1-card-title">{t('dashboard.nextRace')}</h3>
               <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{nextRace.race_name}</h2>
-              <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>{nextRace.circuit_name}, {nextRace.country}</p>
+              <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>{nextRace.circuit_name}, {translateCountry(nextRace.country)}</p>
               <p style={{ marginBottom: '1rem' }}>{formatDate(nextRace.date, nextRace.time)}</p>
-              <div className="f1-status upcoming">Round {nextRace.round}</div>
+              <div className="f1-status upcoming">{t('common.round')} {nextRace.round}</div>
             </div>
           )}
         </div>
@@ -147,7 +149,7 @@ const CalendarPage: React.FC = () => {
 
       {/* Full Calendar */}
       <div className="f1-card">
-        <h3 className="f1-card-title">📅 {selectedYear} Season Calendar</h3>
+        <h3 className="f1-card-title">📅 {selectedYear} {t('standings.season')} {t('nav.calendar')}</h3>
         <div className="f1-grid f1-grid-3">
           {races.map((race) => {
             const { status, label } = getRaceStatus(race);
@@ -155,7 +157,7 @@ const CalendarPage: React.FC = () => {
               <div key={race.round} className="f1-card" style={{ marginBottom: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div>
-                    <div style={{ fontSize: '0.9rem', color: '#ccc' }}>Round {race.round}</div>
+                    <div style={{ fontSize: '0.9rem', color: '#ccc' }}>{t('common.round')} {race.round}</div>
                     <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{race.race_name}</h4>
                   </div>
                   <div className={`f1-status ${status}`}>{label}</div>
@@ -163,16 +165,16 @@ const CalendarPage: React.FC = () => {
                 
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{race.circuit_name}</div>
-                  <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{race.locality}, {race.country}</div>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{race.locality}, {translateCountry(race.country)}</div>
                 </div>
                 
                 <div style={{ fontSize: '0.9rem' }}>
                   <div style={{ marginBottom: '0.25rem' }}>
-                    <strong>Race:</strong> {formatDate(race.date, race.time)}
+                    <strong>{t('calendar.race')}:</strong> {formatDate(race.date, race.time)}
                   </div>
                   {race.qualifying && (
                     <div style={{ color: '#ccc' }}>
-                      <strong>Qualifying:</strong> {formatDate(race.qualifying)}
+                      <strong>{t('calendar.qualifying')}:</strong> {formatDate(race.qualifying)}
                     </div>
                   )}
                 </div>

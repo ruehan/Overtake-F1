@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 interface DriverStanding {
   position: number;
@@ -19,6 +21,8 @@ interface ConstructorStanding {
 }
 
 const StandingsPage: React.FC = () => {
+  const { t } = useLanguage();
+  usePageMeta('standings');
   const [activeTab, setActiveTab] = useState<'drivers' | 'constructors'>('drivers');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [driverStandings, setDriverStandings] = useState<DriverStanding[]>([]);
@@ -69,17 +73,17 @@ const StandingsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="f1-loading">Loading Standings...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('standings.title')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
 
   return (
     <div>
-      <h1 className="f1-card-title">🏆 Championship Standings</h1>
+      <h1 className="f1-card-title">{t('standings.title')}</h1>
       
       {/* Year Selector */}
       <div className="f1-card">
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <label>Season:</label>
+          <label>{t('standings.season')}:</label>
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -111,7 +115,7 @@ const StandingsPage: React.FC = () => {
               borderRadius: '4px'
             }}
           >
-            🏎️ DRIVERS
+            {t('standings.drivers')}
           </button>
           <button
             className={`f1-nav-links button ${activeTab === 'constructors' ? 'active' : ''}`}
@@ -125,7 +129,7 @@ const StandingsPage: React.FC = () => {
               borderRadius: '4px'
             }}
           >
-            🏭 CONSTRUCTORS
+            {t('standings.constructors')}
           </button>
         </div>
       </div>
@@ -133,21 +137,21 @@ const StandingsPage: React.FC = () => {
       {/* Driver Standings */}
       {activeTab === 'drivers' && (
         <div className="f1-card">
-          <h3 className="f1-card-title">🏎️ Driver Championship</h3>
+          <h3 className="f1-card-title">{t('standings.drivers')}</h3>
           
           {driverStandings.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
-              No driver standings available for {selectedYear}
+              {t('common.noData')} ({selectedYear})
             </p>
           ) : (
             <table className="f1-table">
               <thead>
                 <tr>
-                  <th>Pos</th>
-                  <th>Driver</th>
-                  <th>Team</th>
-                  <th>Points</th>
-                  <th>Wins</th>
+                  <th>{t('standings.position')}</th>
+                  <th>{t('standings.driver')}</th>
+                  <th>{t('standings.team')}</th>
+                  <th>{t('standings.points')}</th>
+                  <th>{t('standings.wins')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,21 +200,21 @@ const StandingsPage: React.FC = () => {
       {/* Constructor Standings */}
       {activeTab === 'constructors' && (
         <div className="f1-card">
-          <h3 className="f1-card-title">🏭 Constructor Championship</h3>
+          <h3 className="f1-card-title">{t('standings.constructors')}</h3>
           
           {constructorStandings.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
-              No constructor standings available for {selectedYear}
+              {t('common.noData')} ({selectedYear})
             </p>
           ) : (
             <table className="f1-table">
               <thead>
                 <tr>
-                  <th>Pos</th>
-                  <th>Team</th>
+                  <th>{t('standings.position')}</th>
+                  <th>{t('standings.team')}</th>
                   <th>Nationality</th>
-                  <th>Points</th>
-                  <th>Wins</th>
+                  <th>{t('standings.points')}</th>
+                  <th>{t('standings.wins')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -254,23 +258,23 @@ const StandingsPage: React.FC = () => {
       {/* Championship Analysis */}
       {(driverStandings.length > 0 || constructorStandings.length > 0) && (
         <div className="f1-card">
-          <h3 className="f1-card-title">📊 Championship Battle</h3>
+          <h3 className="f1-card-title">📊 {t('standings.battle')}</h3>
           
           <div className="f1-grid f1-grid-2">
             {driverStandings.length > 1 && (
               <div>
-                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>Driver Championship</h4>
+                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{t('standings.driverChampionship')}</h4>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: '600' }}>Leader:</span>
+                  <span style={{ fontWeight: '600' }}>{t('standings.leader')}:</span>
                   <span>{driverStandings[0]?.name}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: '600' }}>Points:</span>
+                  <span style={{ fontWeight: '600' }}>{t('standings.points')}:</span>
                   <span style={{ color: '#ff6b35' }}>{driverStandings[0]?.points}</span>
                 </div>
                 {driverStandings.length > 1 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: '600' }}>Gap to 2nd:</span>
+                    <span style={{ fontWeight: '600' }}>{t('standings.gapToSecond')}:</span>
                     <span style={{ color: '#ffd700' }}>
                       +{driverStandings[0]?.points - driverStandings[1]?.points} pts
                     </span>
@@ -281,18 +285,18 @@ const StandingsPage: React.FC = () => {
 
             {constructorStandings.length > 1 && (
               <div>
-                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>Constructor Championship</h4>
+                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{t('standings.constructorChampionship')}</h4>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: '600' }}>Leader:</span>
+                  <span style={{ fontWeight: '600' }}>{t('standings.leader')}:</span>
                   <span>{constructorStandings[0]?.team}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: '600' }}>Points:</span>
+                  <span style={{ fontWeight: '600' }}>{t('standings.points')}:</span>
                   <span style={{ color: '#ff6b35' }}>{constructorStandings[0]?.points}</span>
                 </div>
                 {constructorStandings.length > 1 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: '600' }}>Gap to 2nd:</span>
+                    <span style={{ fontWeight: '600' }}>{t('standings.gapToSecond')}:</span>
                     <span style={{ color: '#ffd700' }}>
                       +{constructorStandings[0]?.points - constructorStandings[1]?.points} pts
                     </span>

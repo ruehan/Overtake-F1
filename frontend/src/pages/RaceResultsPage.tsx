@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DriverResult {
   position: number;
@@ -25,6 +26,7 @@ interface RaceResult {
 }
 
 const RaceResultsPage: React.FC = () => {
+  const { t, translateStatus, translateCountry } = useLanguage();
   const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [latestRace, setLatestRace] = useState<RaceResult | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025); // Default to 2025 season
@@ -83,17 +85,17 @@ const RaceResultsPage: React.FC = () => {
     return '#ef4444';
   };
 
-  if (loading) return <div className="f1-loading">Loading Race Results...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('nav.results')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
 
   return (
     <div>
-      <h1 className="f1-card-title">🏆 Race Results</h1>
+      <h1 className="f1-card-title">🏆 {t('nav.results')}</h1>
       
       {/* Year Selector */}
       <div className="f1-card">
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <label>Season:</label>
+          <label>{t('standings.season')}:</label>
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -115,7 +117,7 @@ const RaceResultsPage: React.FC = () => {
       {/* Latest Race Result */}
       {latestRace && (
         <div className="f1-card">
-          <h3 className="f1-card-title">🥇 Latest Race Result</h3>
+          <h3 className="f1-card-title">🥇 Latest {t('nav.results')}</h3>
           <div style={{ marginBottom: '1rem' }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{latestRace.race_name}</h2>
             <p style={{ color: '#ccc' }}>{latestRace.circuit_name} • {formatDate(latestRace.date)}</p>
@@ -133,7 +135,7 @@ const RaceResultsPage: React.FC = () => {
                       <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>{result.driver_name}</div>
                       <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{result.team}</div>
                       <div style={{ marginTop: '0.5rem' }}>
-                        <span style={{ color: '#ff6b35' }}>{result.points} pts</span>
+                        <span style={{ color: '#ff6b35' }}>{result.points} {t('results.points')}</span>
                         {result.time && <span style={{ marginLeft: '1rem', color: '#ccc' }}>{result.time}</span>}
                       </div>
                     </div>
@@ -147,11 +149,11 @@ const RaceResultsPage: React.FC = () => {
 
       {/* Race List */}
       <div className="f1-card">
-        <h3 className="f1-card-title">📋 {selectedYear} Season Results</h3>
+        <h3 className="f1-card-title">📋 {selectedYear} {t('standings.season')} {t('nav.results')}</h3>
         
         {raceResults.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
-            No race results available for {selectedYear}
+            {t('common.noData')} ({selectedYear})
           </p>
         ) : (
           <div className="f1-grid f1-grid-2">
@@ -163,14 +165,14 @@ const RaceResultsPage: React.FC = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <div>
-                      <div style={{ fontSize: '0.9rem', color: '#ccc' }}>Round {race.round}</div>
+                      <div style={{ fontSize: '0.9rem', color: '#ccc' }}>{t('common.round')} {race.round}</div>
                       <h4 style={{ fontSize: '1.1rem' }}>{race.race_name}</h4>
                       <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{race.circuit_name}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.9rem', color: '#ccc' }}>{formatDate(race.date)}</div>
                       <div className="f1-status completed">
-                        {race.results.length > 0 ? `${race.results.length} finishers` : 'No results'}
+                        {race.results.length > 0 ? `${race.results.length} ${t('results.finishers')}` : t('results.noResults')}
                       </div>
                     </div>
                   </div>
@@ -194,11 +196,11 @@ const RaceResultsPage: React.FC = () => {
                     <table className="f1-table">
                       <thead>
                         <tr>
-                          <th>Pos</th>
-                          <th>Driver</th>
-                          <th>Team</th>
-                          <th>Time/Status</th>
-                          <th>Pts</th>
+                          <th>{t('results.position')}</th>
+                          <th>{t('results.driver')}</th>
+                          <th>{t('results.team')}</th>
+                          <th>{t('results.timeStatus')}</th>
+                          <th>{t('results.points')}</th>
                         </tr>
                       </thead>
                       <tbody>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProgressionPoint {
   race: string;
@@ -16,6 +17,7 @@ interface StandingsProgression {
 }
 
 const StandingsProgressionPage: React.FC = () => {
+  const { t } = useLanguage();
   const [progression, setProgression] = useState<StandingsProgression | null>(null);
   const [selectedYear, setSelectedYear] = useState(2024); // 2024가 데이터가 많음
   const [viewType, setViewType] = useState<'drivers' | 'constructors'>('drivers');
@@ -37,7 +39,7 @@ const StandingsProgressionPage: React.FC = () => {
       const data = await response.json();
       setProgression(data.data);
       
-      // 자동으로 상위 8명/팀 선택 (더 많은 선수 표시)
+      // 자동으로 상위 8명/팀 선택
       if (data.data) {
         const items = viewType === 'drivers' ? data.data.driver_progression : data.data.constructor_progression;
         const topItems = Object.keys(items).slice(0, 8);
@@ -201,7 +203,7 @@ const StandingsProgressionPage: React.FC = () => {
             fontWeight="600"
             textAnchor="middle"
           >
-            {viewType === 'drivers' ? 'Driver' : 'Constructor'} Championship Position Progress
+            {t('progression.championshipPositionProgress')}
           </text>
         </svg>
       </div>
@@ -322,28 +324,28 @@ const StandingsProgressionPage: React.FC = () => {
             fontWeight="600"
             textAnchor="middle"
           >
-            {viewType === 'drivers' ? 'Driver' : 'Constructor'} Championship Points Progress
+            {t('progression.championshipPointsProgress')}
           </text>
         </svg>
       </div>
     );
   };
 
-  if (loading) return <div className="f1-loading">Loading Standings Progression...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('nav.progression')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
   if (!progression) return <div className="f1-error">No progression data available</div>;
 
   const items = viewType === 'drivers' ? progression.driver_progression : progression.constructor_progression;
 
   return (
     <div>
-      <h1 className="f1-card-title">📈 Championship Progression</h1>
+      <h1 className="f1-card-title">📈 {t('nav.progression')}</h1>
       
       {/* Controls */}
       <div className="f1-card">
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
-            <label style={{ marginRight: '0.5rem' }}>Season:</label>
+            <label style={{ marginRight: '0.5rem' }}>{t('standings.season')}:</label>
             <select 
               value={selectedYear} 
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -396,7 +398,7 @@ const StandingsProgressionPage: React.FC = () => {
       <div className="f1-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 className="f1-card-title" style={{ margin: 0 }}>
-            Select {viewType === 'drivers' ? 'Drivers' : 'Teams'} to Display ({Object.keys(items).length} available)
+            {viewType === 'drivers' ? t('progression.selectDrivers') : t('progression.selectTeams')} ({Object.keys(items).length} {t('progression.available')})
           </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
@@ -456,13 +458,13 @@ const StandingsProgressionPage: React.FC = () => {
 
       {/* Position Chart */}
       <div className="f1-card">
-        <h3 className="f1-card-title">📊 Championship Position Over Time</h3>
+        <h3 className="f1-card-title">📊 {t('progression.positionOverTime')}</h3>
         {renderPositionChart()}
       </div>
 
       {/* Points Chart */}
       <div className="f1-card">
-        <h3 className="f1-card-title">🏆 Points Accumulation</h3>
+        <h3 className="f1-card-title">🏆 {t('progression.pointsAccumulation')}</h3>
         {renderPointsChart()}
       </div>
 

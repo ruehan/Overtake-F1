@@ -11,3 +11,5 @@ sqlalchemy==2.0.25
 aiosqlite==0.19.0
 alembic==1.13.1
 greenlet==3.0.3
+livef1==1.0.9
+beautifulsoup4==4.13.4

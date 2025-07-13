@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Driver {
   driver_number: number;
@@ -34,6 +36,7 @@ interface NextRace {
 }
 
 const Dashboard: React.FC = () => {
+  const { t, translateCountry, formatMessage } = useLanguage();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [liveTiming, setLiveTiming] = useState<LiveTiming | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -48,7 +51,7 @@ const Dashboard: React.FC = () => {
     fetchInitialData();
     
     // Set up WebSocket connection for live data
-    const ws = new WebSocket('ws://localhost:8000/ws');
+    const ws = new WebSocket(API_ENDPOINTS.websocket);
     
     ws.onopen = () => {
       console.log('WebSocket connected');
@@ -90,35 +93,35 @@ const Dashboard: React.FC = () => {
     
     try {
       // Fetch drivers
-      const driversResponse = await fetch('http://localhost:8000/api/v1/drivers');
+      const driversResponse = await fetch(API_ENDPOINTS.drivers);
       if (driversResponse.ok) {
         const driversData = await driversResponse.json();
         setDrivers(driversData.data || []);
       }
 
       // Fetch weather
-      const weatherResponse = await fetch('http://localhost:8000/api/v1/weather');
+      const weatherResponse = await fetch(API_ENDPOINTS.weather);
       if (weatherResponse.ok) {
         const weatherData = await weatherResponse.json();
         setWeather(weatherData.data || {});
       }
 
       // Fetch next race
-      const nextRaceResponse = await fetch('http://localhost:8000/api/v1/calendar/next');
+      const nextRaceResponse = await fetch(API_ENDPOINTS.nextRace);
       if (nextRaceResponse.ok) {
         const nextRaceData = await nextRaceResponse.json();
         setNextRace(nextRaceData.data);
       }
 
       // Fetch current race
-      const currentRaceResponse = await fetch('http://localhost:8000/api/v1/calendar/current');
+      const currentRaceResponse = await fetch(API_ENDPOINTS.currentRace);
       if (currentRaceResponse.ok) {
         const currentRaceData = await currentRaceResponse.json();
         setCurrentRace(currentRaceData.data);
       }
 
       // Fetch initial live timing
-      const timingResponse = await fetch('http://localhost:8000/api/v1/live-timing');
+      const timingResponse = await fetch(API_ENDPOINTS.liveTiming);
       if (timingResponse.ok) {
         const timingData = await timingResponse.json();
         setLiveTiming(timingData.data || {});
@@ -146,25 +149,25 @@ const Dashboard: React.FC = () => {
     return formatted;
   };
 
-  if (loading) return <div className="f1-loading">Loading Live Dashboard...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('dashboard.title')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
 
   return (
     <div>
-      <h1 className="f1-card-title">🔴 F1 Live Dashboard</h1>
+      <h1 className="f1-card-title">{t('dashboard.title')}</h1>
       
       {/* Connection Status */}
       <div className="f1-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 className="f1-card-title" style={{ marginBottom: '0.5rem' }}>📡 Live Connection</h3>
+            <h3 className="f1-card-title" style={{ marginBottom: '0.5rem' }}>{t('dashboard.connection')}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div className={`f1-status ${isConnected ? 'live' : 'completed'}`}>
-                {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+                {isConnected ? t('dashboard.connected') : t('dashboard.disconnected')}
               </div>
               {lastUpdate && (
                 <span style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                  Last update: {lastUpdate}
+                  {t('dashboard.lastUpdate')}: {lastUpdate}
                 </span>
               )}
             </div>
@@ -180,64 +183,64 @@ const Dashboard: React.FC = () => {
       <div className="f1-grid f1-grid-2">
         {currentRace && (
           <div className="f1-card">
-            <h3 className="f1-card-title">🔴 Current Race Weekend</h3>
+            <h3 className="f1-card-title">{t('dashboard.currentRace')}</h3>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{currentRace.race_name}</h2>
             <p style={{ color: '#ccc', marginBottom: '1rem' }}>{currentRace.circuit_name}</p>
-            <div className="f1-status live">RACE WEEKEND</div>
+            <div className="f1-status live">{t('data.raceWeekend')}</div>
           </div>
         )}
         
         {nextRace && !currentRace && (
           <div className="f1-card">
-            <h3 className="f1-card-title">⏭️ Next Race</h3>
+            <h3 className="f1-card-title">{t('dashboard.nextRace')}</h3>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{nextRace.race_name}</h2>
             <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>{nextRace.circuit_name}</p>
             <p style={{ marginBottom: '1rem' }}>{formatDate(nextRace.date, nextRace.time)}</p>
-            <div className="f1-status upcoming">Round {nextRace.round}</div>
+            <div className="f1-status upcoming">{t('common.round')} {nextRace.round}</div>
           </div>
         )}
         
         {/* Live Timing Status */}
         <div className="f1-card">
-          <h3 className="f1-card-title">⏱️ Live Timing</h3>
+          <h3 className="f1-card-title">{t('dashboard.liveTiming')}</h3>
           <div style={{ marginBottom: '1rem' }}>
             {liveTiming ? (
               <div>
                 <div style={{ marginBottom: '0.5rem' }}>
                   <span style={{ color: '#ccc' }}>Timing Data:</span>
                   <span style={{ marginLeft: '0.5rem', color: (liveTiming.timing && Object.keys(liveTiming.timing).length > 0) ? '#10b981' : '#666' }}>
-                    {(liveTiming.timing && Object.keys(liveTiming.timing).length > 0) ? '✅ Active' : '❌ No Data'}
+                    {(liveTiming.timing && Object.keys(liveTiming.timing).length > 0) ? `✅ ${t('data.timingDataActive')}` : `❌ ${t('data.timingDataNoData')}`}
                   </span>
                 </div>
                 <div style={{ marginBottom: '0.5rem' }}>
                   <span style={{ color: '#ccc' }}>Position Data:</span>
                   <span style={{ marginLeft: '0.5rem', color: (liveTiming.positions && Object.keys(liveTiming.positions).length > 0) ? '#10b981' : '#666' }}>
-                    {(liveTiming.positions && Object.keys(liveTiming.positions).length > 0) ? '✅ Active' : '❌ No Data'}
+                    {(liveTiming.positions && Object.keys(liveTiming.positions).length > 0) ? `✅ ${t('data.timingDataActive')}` : `❌ ${t('data.timingDataNoData')}`}
                   </span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                  Last update: {new Date(liveTiming.timestamp).toLocaleTimeString()}
+                  {t('dashboard.lastUpdate')}: {new Date(liveTiming.timestamp).toLocaleTimeString()}
                 </div>
                 {liveTiming.status && (
                   <div style={{ fontSize: '0.8rem', color: '#ccc', marginTop: '0.5rem' }}>
-                    Status: {liveTiming.status === 'no_active_session' ? 'No active F1 session' : 'Connection error'}
+                    Status: {liveTiming.status === 'no_active_session' ? t('data.noActiveSession') : 'Connection error'}
                   </div>
                 )}
               </div>
             ) : (
-              <p style={{ color: '#666' }}>No timing data available</p>
+              <p style={{ color: '#666' }}>{t('common.noData')}</p>
             )}
           </div>
           
           {!currentRace && (
-            <div className="f1-status completed">NO ACTIVE SESSION</div>
+            <div className="f1-status completed">{t('dashboard.noActiveSession')}</div>
           )}
         </div>
       </div>
 
       {/* Weather Data */}
       <div className="f1-card">
-        <h3 className="f1-card-title">🌤️ Track Conditions</h3>
+        <h3 className="f1-card-title">{t('dashboard.trackConditions')}</h3>
         {weather && Object.keys(weather).length > 0 && !weather.status ? (
           <div style={{ 
             display: 'grid', 
@@ -263,10 +266,10 @@ const Dashboard: React.FC = () => {
         ) : (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#ccc' }}>
-              🌤️ No Live Weather Data
+              {t('dashboard.noWeatherData')}
             </div>
             <p style={{ color: '#666', fontSize: '0.9rem' }}>
-              {weather?.message || "Weather data only available during active F1 sessions"}
+              {weather?.message || t('data.weatherUnavailable')}
             </p>
           </div>
         )}
@@ -274,11 +277,11 @@ const Dashboard: React.FC = () => {
 
       {/* Drivers Grid */}
       <div className="f1-card">
-        <h3 className="f1-card-title">🏎️ Current Drivers ({drivers.length})</h3>
+        <h3 className="f1-card-title">{t('dashboard.drivers')} ({drivers.length})</h3>
         
         {drivers.length === 0 ? (
           <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-            No driver data available
+            {t('common.noData')}
           </p>
         ) : (
           <div className="f1-grid f1-grid-4">
@@ -326,7 +329,7 @@ const Dashboard: React.FC = () => {
 
       {/* System Status */}
       <div className="f1-card">
-        <h3 className="f1-card-title">🔧 System Status</h3>
+        <h3 className="f1-card-title">{t('dashboard.systemStatus')}</h3>
         <div className="f1-grid f1-grid-3">
           <div>
             <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>LiveF1 API</div>
@@ -339,7 +342,7 @@ const Dashboard: React.FC = () => {
           <div>
             <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>WebSocket</div>
             <div className={`f1-status ${isConnected ? 'live' : 'completed'}`}>
-              {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+              {isConnected ? t('dashboard.connected') : t('dashboard.disconnected')}
             </div>
           </div>
         </div>

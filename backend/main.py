@@ -8,6 +8,11 @@ import asyncio
 import json
 import logging
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# 환경 변수 로드
+load_dotenv()
 
 import livef1
 from livef1 import get_season, get_session, get_meeting
@@ -25,9 +30,28 @@ app = FastAPI(
 )
 
 # CORS 설정
+origins = os.getenv("CORS_ORIGINS", '["*"]')
+try:
+    allowed_origins = json.loads(origins)
+except:
+    allowed_origins = ["*"]
+
+# 도메인별 CORS 설정 추가
+if allowed_origins == ["*"]:
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000", 
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://overtake-f1.com",
+        "https://overtake-f1.com",
+        "http://www.overtake-f1.com",
+        "https://www.overtake-f1.com"
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -687,6 +711,432 @@ class LiveF1Service:
             logger.error(f"Failed to get race results: {e}")
             return []
     
+    async def get_driver_statistics(self, year: Optional[int] = None, driver_id: Optional[str] = None) -> Dict[str, Any]:
+        """드라이버 통계 데이터 가져오기"""
+        try:
+            if year is None:
+                year = datetime.now().year
+            
+            import requests
+            
+            # 특정 드라이버 통계 또는 전체 드라이버 통계
+            if driver_id:
+                # 특정 드라이버의 상세 통계
+                driver_results = []
+                
+                # 해당 년도의 모든 레이스 결과에서 해당 드라이버 찾기
+                if year == datetime.now().year:
+                    url = f"https://api.jolpi.ca/ergast/f1/current/drivers/{driver_id}/results.json"
+                else:
+                    url = f"https://api.jolpi.ca/ergast/f1/{year}/drivers/{driver_id}/results.json"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    races = data['MRData']['RaceTable']['Races']
+                    
+                    wins = podiums = points_finishes = dnfs = 0
+                    total_points = 0
+                    fastest_laps = 0
+                    
+                    for race in races:
+                        if 'Results' in race and race['Results']:
+                            result = race['Results'][0]  # 해당 드라이버의 결과
+                            position = int(result['position'])
+                            points = float(result.get('points', 0))
+                            status = result.get('status', '')
+                            
+                            # 통계 계산
+                            if position == 1:
+                                wins += 1
+                            if position <= 3:
+                                podiums += 1
+                            if points > 0:
+                                points_finishes += 1
+                            if 'DNF' in status or 'Accident' in status or 'Retired' in status:
+                                dnfs += 1
+                                
+                            total_points += points
+                            
+                            # 패스티스트 랩 체크
+                            if result.get('FastestLap', {}).get('rank') == '1':
+                                fastest_laps += 1
+                            
+                            # 레이스별 결과 저장
+                            driver_results.append({
+                                'round': int(race['round']),
+                                'race_name': race['raceName'],
+                                'position': position,
+                                'grid': int(result.get('grid', 0)),
+                                'points': points,
+                                'status': status,
+                                'time': result.get('Time', {}).get('time'),
+                                'fastest_lap': result.get('FastestLap', {}).get('Time', {}).get('time')
+                            })
+                    
+                    # 드라이버 정보
+                    driver_info = {}
+                    if races and races[0]['Results']:
+                        driver_data = races[0]['Results'][0]['Driver']
+                        driver_info = {
+                            'driver_id': driver_data['driverId'],
+                            'full_name': f"{driver_data['givenName']} {driver_data['familyName']}",
+                            'code': driver_data.get('code', ''),
+                            'number': driver_data.get('permanentNumber', ''),
+                            'nationality': driver_data.get('nationality', ''),
+                            'date_of_birth': driver_data.get('dateOfBirth', ''),
+                            'url': driver_data.get('url', '')
+                        }
+                    
+                    return {
+                        'driver_info': driver_info,
+                        'season_stats': {
+                            'wins': wins,
+                            'podiums': podiums,
+                            'points_finishes': points_finishes,
+                            'dnfs': dnfs,
+                            'total_points': total_points,
+                            'fastest_laps': fastest_laps,
+                            'races_entered': len(races)
+                        },
+                        'race_results': driver_results,
+                        'year': year
+                    }
+            else:
+                # 전체 드라이버 통계 (시즌 요약)
+                standings = await self.get_driver_standings(year)
+                race_results = await self.get_race_results(year)
+                
+                driver_stats = []
+                for standing in standings:
+                    driver_name = standing['name']
+                    
+                    # 각 드라이버의 레이스 결과 분석
+                    wins = podiums = dnfs = 0
+                    fastest_laps = 0
+                    
+                    for race in race_results:
+                        for result in race.get('results', []):
+                            if result['driver_name'] == driver_name:
+                                position = result['position']
+                                status = result['status']
+                                
+                                if position == 1:
+                                    wins += 1
+                                if position <= 3:
+                                    podiums += 1
+                                if 'DNF' in status or 'Accident' in status or 'Retired' in status:
+                                    dnfs += 1
+                                if result.get('fastest_lap'):
+                                    fastest_laps += 1
+                    
+                    driver_stats.append({
+                        'position': standing['position'],
+                        'driver_name': driver_name,
+                        'driver_code': standing['code'],
+                        'team': standing['team'],
+                        'points': standing['points'],
+                        'wins': wins,
+                        'podiums': podiums,
+                        'dnfs': dnfs,
+                        'fastest_laps': fastest_laps
+                    })
+                
+                return {
+                    'drivers': driver_stats,
+                    'total_drivers': len(driver_stats),
+                    'year': year
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to get driver statistics: {e}")
+            return {}
+
+    async def get_circuit_information(self, year: Optional[int] = None, circuit_id: Optional[str] = None) -> Dict[str, Any]:
+        """서킷 정보 가져오기"""
+        try:
+            if year is None:
+                year = datetime.now().year
+                
+            import requests
+            
+            if circuit_id:
+                # 특정 서킷의 상세 정보
+                if year == datetime.now().year:
+                    url = f"https://api.jolpi.ca/ergast/f1/current/circuits/{circuit_id}.json"
+                else:
+                    url = f"https://api.jolpi.ca/ergast/f1/{year}/circuits/{circuit_id}.json"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    circuits = data['MRData']['CircuitTable']['Circuits']
+                    
+                    if circuits:
+                        circuit = circuits[0]
+                        
+                        # 해당 서킷에서의 레이스 결과 가져오기
+                        if year == datetime.now().year:
+                            races_url = f"https://api.jolpi.ca/ergast/f1/current/circuits/{circuit_id}/results.json"
+                        else:
+                            races_url = f"https://api.jolpi.ca/ergast/f1/{year}/circuits/{circuit_id}/results.json"
+                        
+                        circuit_races = []
+                        try:
+                            races_response = requests.get(races_url, timeout=10)
+                            if races_response.status_code == 200:
+                                races_data = races_response.json()
+                                circuit_races = races_data['MRData']['RaceTable']['Races']
+                        except:
+                            pass
+                        
+                        # 랩 기록 정보 (qualifying 결과에서 추출)
+                        lap_records = []
+                        if circuit_races:
+                            for race in circuit_races:
+                                if 'Results' in race and race['Results']:
+                                    fastest_lap = None
+                                    for result in race['Results']:
+                                        if result.get('FastestLap'):
+                                            if not fastest_lap or result['FastestLap']['Time']['time'] < fastest_lap['time']:
+                                                fastest_lap = {
+                                                    'time': result['FastestLap']['Time']['time'],
+                                                    'driver': f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+                                                    'year': race['season'],
+                                                    'race': race['raceName']
+                                                }
+                                    
+                                    if fastest_lap:
+                                        lap_records.append(fastest_lap)
+                        
+                        # 승리 통계
+                        winner_stats = {}
+                        constructor_stats = {}
+                        
+                        for race in circuit_races:
+                            if 'Results' in race and race['Results']:
+                                winner = race['Results'][0]
+                                driver_name = f"{winner['Driver']['givenName']} {winner['Driver']['familyName']}"
+                                constructor_name = winner['Constructor']['name']
+                                
+                                winner_stats[driver_name] = winner_stats.get(driver_name, 0) + 1
+                                constructor_stats[constructor_name] = constructor_stats.get(constructor_name, 0) + 1
+                        
+                        return {
+                            'circuit_info': {
+                                'circuit_id': circuit['circuitId'],
+                                'name': circuit['circuitName'],
+                                'location': {
+                                    'locality': circuit['Location']['locality'],
+                                    'country': circuit['Location']['country'],
+                                    'lat': circuit['Location'].get('lat'),
+                                    'lng': circuit['Location'].get('long')
+                                },
+                                'url': circuit.get('url', '')
+                            },
+                            'race_history': circuit_races,
+                            'lap_records': sorted(lap_records, key=lambda x: x['time'])[:10],  # Top 10 fastest laps
+                            'winner_statistics': {
+                                'drivers': dict(sorted(winner_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
+                                'constructors': dict(sorted(constructor_stats.items(), key=lambda x: x[1], reverse=True)[:10])
+                            },
+                            'total_races': len(circuit_races),
+                            'year': year
+                        }
+            else:
+                # 모든 서킷 목록
+                if year == datetime.now().year:
+                    url = "https://api.jolpi.ca/ergast/f1/current/circuits.json"
+                else:
+                    url = f"https://api.jolpi.ca/ergast/f1/{year}/circuits.json"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    circuits = data['MRData']['CircuitTable']['Circuits']
+                    
+                    circuit_list = []
+                    for circuit in circuits:
+                        circuit_list.append({
+                            'circuit_id': circuit['circuitId'],
+                            'name': circuit['circuitName'],
+                            'location': {
+                                'locality': circuit['Location']['locality'],
+                                'country': circuit['Location']['country'],
+                                'lat': circuit['Location'].get('lat'),
+                                'lng': circuit['Location'].get('long')
+                            },
+                            'url': circuit.get('url', '')
+                        })
+                    
+                    return {
+                        'circuits': circuit_list,
+                        'total_circuits': len(circuit_list),
+                        'year': year
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Failed to get circuit information: {e}")
+            return {}
+
+    async def get_team_statistics(self, year: Optional[int] = None, team_id: Optional[str] = None) -> Dict[str, Any]:
+        """팀 통계 데이터 가져오기"""
+        try:
+            if year is None:
+                year = datetime.now().year
+            
+            import requests
+            
+            if team_id:
+                # 특정 팀의 상세 통계
+                if year == datetime.now().year:
+                    url = f"https://api.jolpi.ca/ergast/f1/current/constructors/{team_id}/results.json"
+                else:
+                    url = f"https://api.jolpi.ca/ergast/f1/{year}/constructors/{team_id}/results.json"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    races = data['MRData']['RaceTable']['Races']
+                    
+                    # 팀 통계 계산
+                    wins = podiums = points_finishes = dnfs = 0
+                    total_points = 0
+                    fastest_laps = 0
+                    one_twos = 0  # 1-2 피니시
+                    
+                    team_results = []
+                    
+                    for race in races:
+                        if 'Results' in race:
+                            race_data = {
+                                'round': int(race['round']),
+                                'race_name': race['raceName'],
+                                'driver_results': []
+                            }
+                            
+                            positions = []
+                            for result in race['Results']:
+                                position = int(result['position'])
+                                points = float(result.get('points', 0))
+                                status = result.get('status', '')
+                                
+                                positions.append(position)
+                                
+                                # 통계 업데이트
+                                if position == 1:
+                                    wins += 1
+                                if position <= 3:
+                                    podiums += 1
+                                if points > 0:
+                                    points_finishes += 1
+                                if 'DNF' in status or 'Accident' in status or 'Retired' in status:
+                                    dnfs += 1
+                                if result.get('FastestLap', {}).get('rank') == '1':
+                                    fastest_laps += 1
+                                
+                                total_points += points
+                                
+                                # 드라이버별 결과
+                                race_data['driver_results'].append({
+                                    'driver_name': f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+                                    'position': position,
+                                    'grid': int(result.get('grid', 0)),
+                                    'points': points,
+                                    'status': status,
+                                    'time': result.get('Time', {}).get('time')
+                                })
+                            
+                            # 1-2 피니시 체크
+                            if len(positions) >= 2 and 1 in positions and 2 in positions:
+                                one_twos += 1
+                            
+                            team_results.append(race_data)
+                    
+                    # 팀 정보
+                    team_info = {}
+                    if races and races[0]['Results']:
+                        constructor_data = races[0]['Results'][0]['Constructor']
+                        team_info = {
+                            'team_id': constructor_data['constructorId'],
+                            'name': constructor_data['name'],
+                            'nationality': constructor_data.get('nationality', ''),
+                            'url': constructor_data.get('url', '')
+                        }
+                    
+                    return {
+                        'team_info': team_info,
+                        'season_stats': {
+                            'wins': wins,
+                            'podiums': podiums,
+                            'points_finishes': points_finishes,
+                            'dnfs': dnfs,
+                            'total_points': total_points,
+                            'fastest_laps': fastest_laps,
+                            'one_twos': one_twos,
+                            'races_entered': len(races)
+                        },
+                        'race_results': team_results,
+                        'year': year
+                    }
+            else:
+                # 전체 팀 통계
+                standings = await self.get_constructor_standings(year)
+                race_results = await self.get_race_results(year)
+                
+                team_stats = []
+                for standing in standings:
+                    team_name = standing['team']
+                    
+                    # 각 팀의 레이스 결과 분석
+                    wins = podiums = dnfs = 0
+                    fastest_laps = 0
+                    one_twos = 0
+                    
+                    for race in race_results:
+                        race_positions = []
+                        for result in race.get('results', []):
+                            if result['team'] == team_name:
+                                position = result['position']
+                                status = result['status']
+                                
+                                race_positions.append(position)
+                                
+                                if position == 1:
+                                    wins += 1
+                                if position <= 3:
+                                    podiums += 1
+                                if 'DNF' in status or 'Accident' in status or 'Retired' in status:
+                                    dnfs += 1
+                                if result.get('fastest_lap'):
+                                    fastest_laps += 1
+                        
+                        # 1-2 피니시 체크
+                        if len(race_positions) >= 2 and 1 in race_positions and 2 in race_positions:
+                            one_twos += 1
+                    
+                    team_stats.append({
+                        'position': standing['position'],
+                        'team_name': team_name,
+                        'nationality': standing.get('nationality', ''),
+                        'points': standing['points'],
+                        'wins': wins,
+                        'podiums': podiums,
+                        'dnfs': dnfs,
+                        'fastest_laps': fastest_laps,
+                        'one_twos': one_twos
+                    })
+                
+                return {
+                    'teams': team_stats,
+                    'total_teams': len(team_stats),
+                    'year': year
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to get team statistics: {e}")
+            return {}
+
     async def _livef1_request(self, endpoint: str) -> Any:
         try:
             loop = asyncio.get_event_loop()
@@ -884,6 +1334,39 @@ async def get_race_weekend_detail(round_number: int, year: Optional[int] = None)
         }
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/driver-statistics")
+async def get_driver_statistics(year: Optional[int] = None, driver_id: Optional[str] = None):
+    try:
+        stats = await livef1_service.get_driver_statistics(year, driver_id)
+        return {
+            "data": stats,
+            "year": year or datetime.now().year
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/team-statistics")
+async def get_team_statistics(year: Optional[int] = None, team_id: Optional[str] = None):
+    try:
+        stats = await livef1_service.get_team_statistics(year, team_id)
+        return {
+            "data": stats,
+            "year": year or datetime.now().year
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/circuits")
+async def get_circuits(year: Optional[int] = None, circuit_id: Optional[str] = None):
+    try:
+        circuits = await livef1_service.get_circuit_information(year, circuit_id)
+        return {
+            "data": circuits,
+            "year": year or datetime.now().year
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

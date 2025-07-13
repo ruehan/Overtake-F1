@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Session {
   session_type: string;
@@ -29,6 +30,7 @@ interface RaceWeekendsData {
 }
 
 const RaceWeekendsPage: React.FC = () => {
+  const { t, translateCountry, formatMessage } = useLanguage();
   const [weekendsData, setWeekendsData] = useState<RaceWeekendsData | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025); // 2025가 기본값
   const [selectedWeekend, setSelectedWeekend] = useState<RaceWeekend | null>(null);
@@ -70,6 +72,25 @@ const RaceWeekendsPage: React.FC = () => {
     return formatted;
   };
 
+  const translateSessionType = (sessionType: string) => {
+    switch (sessionType.toLowerCase()) {
+      case 'practice 1':
+        return t('weekends.practice1');
+      case 'practice 2':
+        return t('weekends.practice2');
+      case 'practice 3':
+        return t('weekends.practice3');
+      case 'qualifying':
+        return t('weekends.qualifying');
+      case 'sprint':
+        return t('weekends.sprint');
+      case 'race':
+        return t('weekends.race');
+      default:
+        return sessionType;
+    }
+  };
+
   const getSessionIcon = (sessionType: string) => {
     switch (sessionType.toLowerCase()) {
       case 'practice 1':
@@ -105,7 +126,7 @@ const RaceWeekendsPage: React.FC = () => {
     return (
       <div style={{ marginTop: '1rem' }}>
         <h5 style={{ color: '#ff6b35', marginBottom: '0.5rem' }}>
-          {session.session_type} Results
+          {translateSessionType(session.session_type)} {t('weekends.results')}
         </h5>
         <div style={{ 
           maxHeight: '300px', 
@@ -181,18 +202,18 @@ const RaceWeekendsPage: React.FC = () => {
     );
   };
 
-  if (loading) return <div className="f1-loading">Loading Race Weekends...</div>;
-  if (error) return <div className="f1-error">Error: {error}</div>;
-  if (!weekendsData) return <div className="f1-error">No data available</div>;
+  if (loading) return <div className="f1-loading">{t('common.loading')} {t('weekends.title')}...</div>;
+  if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
+  if (!weekendsData) return <div className="f1-error">{t('common.noData')}</div>;
 
   return (
     <div>
-      <h1 className="f1-card-title">🏁 Race Weekends</h1>
+      <h1 className="f1-card-title">🏁 {t('weekends.title')}</h1>
       
       {/* Controls */}
       <div className="f1-card">
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <label style={{ marginRight: '0.5rem' }}>Season:</label>
+          <label style={{ marginRight: '0.5rem' }}>{t('standings.season')}:</label>
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -231,7 +252,7 @@ const RaceWeekendsPage: React.FC = () => {
                   <div style={{ fontSize: '0.9rem', color: '#ccc' }}>Round {weekend.round}</div>
                   <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{weekend.race_name}</h3>
                   <div style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                    {weekend.circuit_name} • {weekend.locality}, {weekend.country}
+                    {weekend.circuit_name} • {weekend.locality}, {translateCountry(weekend.country)}
                   </div>
                 </div>
                 <div className={`f1-status ${weekend.weekend_status === 'completed' ? 'completed' : 'upcoming'}`}>
@@ -242,7 +263,7 @@ const RaceWeekendsPage: React.FC = () => {
               {/* Session Overview */}
               <div style={{ marginBottom: '1rem' }}>
                 <div style={{ fontSize: '0.9rem', color: '#ff6b35', marginBottom: '0.5rem' }}>
-                  Race Weekend: {formatDateTime(weekend.date)}
+                  {t('weekends.raceWeekend')}: {formatDateTime(weekend.date)}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {weekend.sessions.map((session, index) => (
@@ -260,7 +281,7 @@ const RaceWeekendsPage: React.FC = () => {
                       }}
                     >
                       <span>{getSessionIcon(session.session_type)}</span>
-                      <span>{session.session_type}</span>
+                      <span>{translateSessionType(session.session_type)}</span>
                       <span style={{ color: getStatusColor(session.status) }}>
                         {session.status === 'completed' ? '✓' : '○'}
                       </span>
@@ -277,7 +298,7 @@ const RaceWeekendsPage: React.FC = () => {
                 borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
                 paddingTop: '1rem' 
               }}>
-                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>Session Schedule & Results</h4>
+                <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{t('weekends.sessionSchedule')}</h4>
                 
                 {weekend.sessions.map((session, index) => (
                   <div
@@ -293,7 +314,7 @@ const RaceWeekendsPage: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>{getSessionIcon(session.session_type)}</span>
-                        <h5 style={{ margin: 0, fontSize: '1.1rem' }}>{session.session_type}</h5>
+                        <h5 style={{ margin: 0, fontSize: '1.1rem' }}>{translateSessionType(session.session_type)}</h5>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>

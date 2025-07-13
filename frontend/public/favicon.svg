@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Simple red background -->
+  <rect width="32" height="32" fill="#E10600"/>
+  
+  <!-- White F1 text - larger and bolder -->
+  <g fill="white" font-family="Arial, sans-serif" font-weight="bold">
+    <!-- F -->
+    <rect x="6" y="8" width="8" height="2"/>
+    <rect x="6" y="8" width="2" height="16"/>
+    <rect x="6" y="14" width="6" height="2"/>
+    
+    <!-- 1 -->
+    <rect x="18" y="8" width="2" height="16"/>
+    <rect x="16" y="8" width="4" height="2"/>
+  </g>
+  
+  <!-- Small racing line -->
+  <rect x="4" y="28" width="24" height="1" fill="white" opacity="0.8"/>
+</svg>
