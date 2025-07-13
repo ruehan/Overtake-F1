@@ -336,6 +336,87 @@ class LiveF1Service:
             logger.error(f"Failed to get current race: {e}")
             return None
     
+    async def get_race_results(self, year: Optional[int] = None, round_number: Optional[int] = None) -> List[Dict[str, Any]]:
+        """레이스 결과 가져오기 (페이지네이션 사용)"""
+        try:
+            if year is None:
+                year = datetime.now().year
+            
+            import requests
+            
+            all_races = []
+            offset = 0
+            limit = 100
+            
+            while True:
+                # 페이지네이션으로 모든 결과 가져오기
+                if round_number:
+                    url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_number}/results.json?limit={limit}&offset={offset}"
+                else:
+                    if year == datetime.now().year:
+                        url = f"https://api.jolpi.ca/ergast/f1/current/results.json?limit={limit}&offset={offset}"
+                    else:
+                        url = f"https://api.jolpi.ca/ergast/f1/{year}/results.json?limit={limit}&offset={offset}"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    races = data['MRData']['RaceTable']['Races']
+                    
+                    if not races:  # 더 이상 데이터가 없으면 중단
+                        break
+                    
+                    all_races.extend(races)
+                    
+                    # 총 레이스 수를 확인하여 모든 데이터를 가져왔는지 체크
+                    total = int(data['MRData'].get('total', 0))
+                    if len(all_races) >= total:
+                        break
+                    
+                    offset += limit
+                else:
+                    break
+            
+            # 데이터 포맷팅
+            formatted_results = []
+            for race in all_races:
+                race_info = {
+                    "round": int(race['round']),
+                    "race_name": race['raceName'],
+                    "circuit_name": race['Circuit']['circuitName'],
+                    "country": race['Circuit']['Location']['country'],
+                    "date": race['date'],
+                    "season": race['season'],
+                    "results": []
+                }
+                
+                # 결과 데이터 포맷팅
+                if 'Results' in race:
+                    for result in race['Results']:
+                        driver_result = {
+                            "position": int(result['position']),
+                            "driver_number": int(result['Driver'].get('permanentNumber', 0)),
+                            "driver_name": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+                            "driver_code": result['Driver'].get('code', ''),
+                            "team": result['Constructor']['name'],
+                            "grid": int(result.get('grid', 0)),
+                            "laps": int(result.get('laps', 0)),
+                            "status": result.get('status', ''),
+                            "time": result.get('Time', {}).get('time'),
+                            "points": float(result.get('points', 0)),
+                            "fastest_lap": result.get('FastestLap', {}).get('Time', {}).get('time')
+                        }
+                        race_info["results"].append(driver_result)
+                
+                formatted_results.append(race_info)
+            
+            logger.info(f"Fetched {len(formatted_results)} race results for year {year}")
+            return formatted_results
+            
+        except Exception as e:
+            logger.error(f"Failed to get race results: {e}")
+            return []
+    
     async def _livef1_request(self, endpoint: str) -> Any:
         try:
             loop = asyncio.get_event_loop()
@@ -456,6 +537,42 @@ async def get_current_race():
             return {"data": current_race}
         else:
             return {"data": None, "message": "No race weekend currently in progress"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/race-results")
+async def get_race_results(
+    year: Optional[int] = None,
+    round_number: Optional[int] = None
+):
+    try:
+        results = await livef1_service.get_race_results(year, round_number)
+        return {
+            "data": results, 
+            "count": len(results), 
+            "year": year or datetime.now().year,
+            "round": round_number
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/race-results/latest")
+async def get_latest_race_result():
+    try:
+        # Get current year results and find the latest completed race
+        results = await livef1_service.get_race_results()
+        if not results:
+            return {"data": None, "message": "No race results found"}
+        
+        # Filter races that have results (completed races)
+        completed_races = [race for race in results if race.get('results')]
+        
+        if not completed_races:
+            return {"data": None, "message": "No completed races found"}
+        
+        # Return the most recent completed race
+        latest_race = completed_races[-1]
+        return {"data": latest_race}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
