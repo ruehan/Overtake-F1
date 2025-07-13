@@ -16,6 +16,7 @@ export interface Team {
     name: string;
     abbreviation: string;
   }>;
+  logo_url?: string;
 }
 
 export interface Position {

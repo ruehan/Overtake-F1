@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query, HTTPException, BackgroundTasks
 from typing import Optional, List, Dict, Any
 
 from app.services.standings_calculator import standings_calculator
+from app.core.image_mappings import get_driver_image, get_team_logo
 
 router = APIRouter()
 
@@ -16,7 +17,13 @@ async def get_cached_driver_standings(
         if not data:
             raise HTTPException(status_code=404, detail=f"No standings data available for {year}")
         
-        return data.get("driver_standings", [])
+        standings = data.get("driver_standings", [])
+        
+        # 각 드라이버에 이미지 URL 추가
+        for standing in standings:
+            standing["headshot_url"] = get_driver_image(standing.get("driver_name", ""))
+        
+        return standings
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -32,7 +39,13 @@ async def get_cached_constructor_standings(
         if not data:
             raise HTTPException(status_code=404, detail=f"No standings data available for {year}")
         
-        return data.get("constructor_standings", [])
+        standings = data.get("constructor_standings", [])
+        
+        # 각 팀에 로고 URL 추가
+        for standing in standings:
+            standing["logo_url"] = get_team_logo(standing.get("team_name", ""))
+        
+        return standings
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

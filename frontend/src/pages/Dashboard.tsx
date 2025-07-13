@@ -286,40 +286,81 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="f1-grid f1-grid-4">
             {drivers.map((driver) => (
-              <div key={driver.driver_number} className="f1-card" style={{ marginBottom: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{
-                    background: driver.team_colour || '#ff6b35',
-                    color: '#fff',
-                    width: '3rem',
-                    height: '3rem',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '1.1rem'
-                  }}>
-                    {driver.driver_number}
+              <div key={driver.driver_number} className="f1-card" style={{ marginBottom: 0, padding: '1.2rem' }}>
+                <div style={{ display: 'flex', gap: '1.2rem', height: '140px' }}>
+                  {/* 왼쪽 정보 영역 */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}>
+                    {/* 드라이버 번호 */}
+                    <div style={{
+                      background: driver.team_colour || '#ff6b35',
+                      color: '#fff',
+                      width: '3rem',
+                      height: '3rem',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '700',
+                      fontSize: '1.3rem',
+                      boxShadow: `0 4px 8px ${driver.team_colour || '#ff6b35'}33`
+                    }}>
+                      {driver.driver_number}
+                    </div>
+                    
+                    {/* 드라이버 이름 */}
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <div style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.4rem', color: '#fff' }}>
+                        {driver.abbreviation}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '0.4rem', lineHeight: '1.2' }}>
+                        {driver.full_name || driver.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#aaa', lineHeight: '1.2' }}>
+                        {driver.team_name}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                  
+                  {/* 오른쪽 이미지 영역 */}
+                  <div style={{ width: '120px', height: '140px', position: 'relative' }}>
+                    {driver.headshot_url ? (
+                      <img 
+                        src={driver.headshot_url.startsWith('/') ? driver.headshot_url : `/${driver.headshot_url}`} 
+                        alt={driver.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '10px',
+                          objectFit: 'cover',
+                          objectPosition: 'center top',
+                          border: `3px solid ${driver.team_colour || '#ff6b35'}`,
+                          boxShadow: `0 4px 12px ${driver.team_colour || '#ff6b35'}33`
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div style={{
+                      background: `linear-gradient(135deg, ${driver.team_colour || '#ff6b35'}, ${driver.team_colour || '#ff6b35'}88, #333)`,
+                      color: '#fff',
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '10px',
+                      display: driver.headshot_url ? 'none' : 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '700',
+                      fontSize: '1.8rem',
+                      border: `3px solid ${driver.team_colour || '#ff6b35'}`,
+                      boxShadow: `0 4px 12px ${driver.team_colour || '#ff6b35'}33`
+                    }}>
                       {driver.abbreviation}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                      {driver.country_code}
-                    </div>
                   </div>
-                </div>
-                
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>
-                    {driver.full_name || driver.name}
-                  </div>
-                </div>
-                
-                <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                  {driver.team_name}
                 </div>
               </div>
             ))}

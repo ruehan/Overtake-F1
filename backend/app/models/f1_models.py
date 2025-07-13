@@ -51,6 +51,7 @@ class Team(BaseModel):
     team_name: str = Field(..., description="Team name")
     team_colour: str = Field(..., description="Team color in hex format")
     drivers: List[Dict[str, Any]] = Field(default_factory=list, description="List of drivers in the team")
+    logo_url: Optional[str] = Field(None, description="URL to team logo image")
     
     @field_validator('team_colour')
     @classmethod

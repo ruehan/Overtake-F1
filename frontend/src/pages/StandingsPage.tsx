@@ -10,6 +10,7 @@ interface DriverStanding {
   team: string;
   points: number;
   wins: number;
+  headshot_url?: string;
 }
 
 interface ConstructorStanding {
@@ -18,6 +19,7 @@ interface ConstructorStanding {
   nationality: string;
   points: number;
   wins: number;
+  logo_url?: string;
 }
 
 const StandingsPage: React.FC = () => {
@@ -165,10 +167,30 @@ const StandingsPage: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      <div>
-                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{driver.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                          #{driver.driver_number} • {driver.code}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {driver.headshot_url && (
+                          <img 
+                            src={driver.headshot_url.startsWith('/') ? driver.headshot_url : `/${driver.headshot_url}`} 
+                            alt={driver.name}
+                            style={{
+                              width: '50px',
+                              height: '50px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '2px solid rgba(255, 255, 255, 0.1)',
+                              background: '#333'
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/images/drivers/default.svg';
+                            }}
+                          />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{driver.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
+                            #{driver.driver_number} • {driver.code}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -228,7 +250,23 @@ const StandingsPage: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: '600' }}>{constructor.team}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {constructor.logo_url && (
+                          <img 
+                            src={constructor.logo_url} 
+                            alt={constructor.team}
+                            style={{
+                              width: '60px',
+                              height: '40px',
+                              objectFit: 'contain'
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div style={{ fontWeight: '600' }}>{constructor.team}</div>
+                      </div>
                     </td>
                     <td style={{ color: '#ccc' }}>{constructor.nationality}</td>
                     <td>

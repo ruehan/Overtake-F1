@@ -102,15 +102,43 @@ class LiveF1Service:
             if current_standings:
                 drivers = []
                 for standing in current_standings:
+                    driver_name = standing.get("name", "")
+                    original_team = standing.get("team", "")
+                    
+                    # 팀 소속 수정
+                    if driver_name == "Yuki Tsunoda":
+                        team_name = "Red Bull"
+                        team_colour = "#0600EF"  # 레드불 색상
+                    elif driver_name == "Liam Lawson":
+                        team_name = "RB F1 Team"
+                        team_colour = "#6692FF"  # RB F1 Team 색상
+                    else:
+                        team_name = original_team
+                        # 팀별 색상 매핑
+                        team_colour_map = {
+                            "Mercedes": "#00D2BE",
+                            "Red Bull Racing": "#0600EF",
+                            "Red Bull": "#0600EF",
+                            "Ferrari": "#DC143C",
+                            "McLaren": "#FF8700",
+                            "Alpine": "#0090FF",
+                            "Aston Martin": "#006F62",
+                            "Williams": "#005AFF",
+                            "Alfa Romeo": "#900000",
+                            "Haas": "#FFFFFF",
+                            "RB F1 Team": "#6692FF"
+                        }
+                        team_colour = team_colour_map.get(team_name, "#ff6b35")
+                    
                     drivers.append({
                         "driver_number": standing.get("driver_number", 0),
-                        "full_name": standing.get("name", ""),
-                        "name": standing.get("name", "").split()[-1] if standing.get("name") else "",
+                        "full_name": driver_name,
+                        "name": driver_name.split()[-1] if driver_name else "",
                         "abbreviation": standing.get("code", ""),
-                        "team_name": standing.get("team", ""),
-                        "team_colour": "#ff6b35",  # 기본 색상
+                        "team_name": team_name,
+                        "team_colour": team_colour,
                         "country_code": "",
-                        "headshot_url": ""
+                        "headshot_url": f"/images/drivers/{driver_name}.webp" if driver_name else ""
                     })
                 return drivers
             
@@ -227,14 +255,29 @@ class LiveF1Service:
                     # 데이터 포맷 변환
                     formatted_standings = []
                     for i, driver_data in enumerate(raw_standings):
+                        driver_name = f"{driver_data['Driver']['givenName']} {driver_data['Driver']['familyName']}"
+                        original_team = driver_data['Constructors'][0]['name'] if driver_data['Constructors'] else 'Unknown'
+                        
+                        # 팀 소속 수정
+                        if driver_name == "Yuki Tsunoda":
+                            team_name = "Red Bull"
+                        elif driver_name == "Liam Lawson":
+                            team_name = "RB F1 Team"
+                        else:
+                            team_name = original_team
+                        
+                        # 이미지 URL 추가 (파일이 있으면 자동 매핑)
+                        headshot_url = f"/images/drivers/{driver_name}.webp"
+                        
                         formatted_standings.append({
                             "position": int(driver_data['position']),
                             "driver_number": int(driver_data['Driver'].get('permanentNumber', i + 1)),
-                            "name": f"{driver_data['Driver']['givenName']} {driver_data['Driver']['familyName']}",
+                            "name": driver_name,
                             "code": driver_data['Driver'].get('code', ''),
-                            "team": driver_data['Constructors'][0]['name'] if driver_data['Constructors'] else 'Unknown',
+                            "team": team_name,
                             "points": int(driver_data['points']),
-                            "wins": int(driver_data['wins'])
+                            "wins": int(driver_data['wins']),
+                            "headshot_url": headshot_url
                         })
                     
                     return formatted_standings
