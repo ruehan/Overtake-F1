@@ -1,147 +1,120 @@
-# OpenF1 Dashboard
+# Overtake - F1 실시간 데이터 대시보드
 
-A real-time F1 race data visualization dashboard using React and FastAPI.
+Formula 1 레이스의 실시간 데이터를 시각화하는 종합 대시보드입니다. LiveF1과 OpenF1 API를 활용하여 레이스 현황을 실시간으로 제공합니다.
 
-## Features
+## 주요 기능
 
-- Real-time race position tracking
-- Driver and team information
-- Weather data integration
-- Lap time analysis
-- Pit stop tracking
-- Team radio archive
-- WebSocket support for live updates
+### 📊 레이스 데이터
+- 실시간 드라이버 포지션 추적
+- 순위표 및 포인트 현황
+- 랩타임 분석 및 비교
+- 피트스톱 전략 분석
 
-## Tech Stack
+### 🏎️ 팀 & 드라이버 정보
+- 드라이버별 상세 통계
+- 팀 순위 및 성과 분석
+- 시즌별 진행 현황
 
-- **Frontend**: React with TypeScript, D3.js for visualizations, Socket.io for real-time updates
-- **Backend**: FastAPI (Python), WebSocket support, Redis for caching
-- **API**: OpenF1 API integration
+### 🌦️ 날씨 & 서킷 정보
+- 실시간 날씨 데이터
+- 타이어 전략 제안
+- 서킷별 특성 정보
 
-## Prerequisites
+### 📻 팀 라디오
+- 팀 라디오 실시간 스트리밍
+- 과거 메시지 아카이브
+- 드라이버별 필터링
 
-- Node.js 16+ and npm
-- Python 3.9+
-- Redis (optional, for caching)
+### 🗺️ 라이브 맵
+- 실시간 차량 위치 추적
+- 서킷 오버레이
+- 섹터별 타이밍
 
-## Installation
+### 🔔 알림 시스템
+- 중요 이벤트 알림
+- 사용자 맞춤 설정
+- 웹소켓 기반 실시간 업데이트
 
-### Backend Setup
+### 🌐 다국어 지원
+- 한국어/영어 지원
+- 동적 언어 전환
 
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
+## 기술 스택
 
-2. Create a virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+- **Frontend**: React 19 with TypeScript, D3.js, Socket.io, React Router
+- **Backend**: FastAPI, Python 3.9+, SQLAlchemy, Redis, WebSocket
+- **API**: LiveF1 API, OpenF1 API 통합
+- **배포**: PM2, Nginx, SSL 인증서 지원
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## 플랫폼 구조
 
-4. Copy the environment file:
-```bash
-cp .env.example .env
-```
+Overtake는 실시간 F1 데이터를 처리하고 시각화하는 종합적인 웹 플랫폼입니다.
 
-5. Edit `.env` and add your OpenF1 API key if you have one (optional)
+### 데이터 수집 및 처리
+- **LiveF1 API**: 공식 F1 실시간 텔레메트리 데이터
+- **OpenF1 API**: 레이스 결과, 드라이버/팀 정보
+- **실시간 스트리밍**: WebSocket을 통한 즉시 데이터 전송
+- **캐싱 시스템**: Redis 기반 고성능 데이터 저장
 
-### Frontend Setup
+### 사용자 인터페이스
+- **반응형 디자인**: 모바일, 태블릿, 데스크톱 지원
+- **실시간 차트**: D3.js 기반 인터랙티브 시각화
+- **다중 뷰포트**: 동시에 여러 데이터 화면 모니터링
+- **커스터마이징**: 사용자별 레이아웃 및 알림 설정
 
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
+### 성능 최적화
+- **지능형 캐싱**: 자주 요청되는 데이터 사전 로딩
+- **효율적 업데이트**: 변경된 데이터만 실시간 전송
+- **백그라운드 처리**: 무거운 계산 작업 비동기 처리
 
-2. Install dependencies:
-```bash
-npm install
-```
+## 주요 페이지
 
-## Running the Application
+### 🏠 대시보드
+- 전체 레이스 현황 한눈에 보기
+- 실시간 순위 및 주요 이벤트
+- 빠른 네비게이션 허브
 
-### Start the Backend
+### 🏆 순위표
+- 드라이버 챔피언십 순위
+- 컨스트럭터 챔피언십 순위
+- 시즌별 포인트 진행 현황
 
-```bash
-cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-python main.py
-```
+### 📅 레이스 캘린더
+- 2024/2025 시즌 일정
+- 서킷별 상세 정보
+- 세션별 타임테이블
 
-The API will be available at http://localhost:8000
+### 📊 분석 도구
+- 랩타임 비교 및 분석
+- 타이어 전략 시뮬레이션
+- 드라이버 성능 통계
 
-### Start the Frontend
+### 🗺️ 라이브 트래킹
+- 실시간 차량 위치
+- 섹터별 타이밍
+- 트랙 상황 모니터링
 
-In a new terminal:
+### 📻 팀 라디오
+- 실시간 팀 커뮤니케이션
+- 드라이버별 메시지 필터
+- 중요 순간 하이라이트
 
-```bash
-cd frontend
-npm start
-```
+### 🌦️ 날씨 & 조건
+- 서킷 기상 상황
+- 트랙 온도 및 습도
+- 레이스 전략에 미치는 영향
 
-The application will be available at http://localhost:3000
+## 기술적 특징
 
-## API Documentation
+### 🔄 실시간 동기화
+모든 데이터는 WebSocket을 통해 실시간으로 동기화되어 레이스 현장과 동일한 정보를 제공합니다.
 
-Once the backend is running, you can access the API documentation at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+### 📱 크로스 플랫폼
+웹 브라우저만 있으면 어디서든 접속 가능하며, 모든 기기에서 최적화된 경험을 제공합니다.
 
-## Project Structure
+### 🎨 사용자 경험
+직관적인 인터페이스와 빠른 응답속도로 F1 팬들이 원하는 정보를 즉시 확인할 수 있습니다.
 
-```
-overtake/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API endpoints
-│   │   ├── core/         # Core functionality (middleware, exceptions)
-│   │   ├── models/       # Data models
-│   │   └── services/     # Business logic and external API clients
-│   ├── main.py           # Application entry point
-│   └── requirements.txt  # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/   # React components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── services/     # API and WebSocket services
-│   │   └── types/        # TypeScript type definitions
-│   └── package.json      # Node dependencies
-└── README.md
-```
+---
 
-## Development
-
-### Backend Development
-
-The backend runs with hot-reload enabled by default. Any changes to Python files will automatically restart the server.
-
-### Frontend Development
-
-The React development server includes hot module replacement. Changes to components will update in the browser without a full reload.
-
-## Environment Variables
-
-### Backend (.env)
-
-- `OPENF1_API_KEY`: Your OpenF1 API key (optional)
-- `REDIS_URL`: Redis connection URL (default: redis://localhost:6379)
-- `RATE_LIMIT_PER_MINUTE`: API rate limit (default: 60)
-- `DEBUG`: Enable debug mode (default: true)
-
-### Frontend
-
-Create a `.env` file in the frontend directory:
-
-```
-REACT_APP_API_URL=http://localhost:8000/api/v1
-REACT_APP_WS_URL=http://localhost:8000
-```
-
-## License
-
-This project is licensed under the MIT License.
+*Overtake - Formula 1의 모든 순간을 놓치지 마세요*
