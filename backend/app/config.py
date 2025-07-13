@@ -5,9 +5,17 @@ import os
 class Settings(BaseSettings):
     # API Settings
     api_v1_str: str = "/api/v1"
-    project_name: str = "OpenF1 Dashboard"
+    project_name: str = "F1 Dashboard"
     
-    # OpenF1 API
+    # F1 Data Source Configuration
+    use_livef1: bool = True  # Use LiveF1 as primary data source
+    fallback_to_openf1: bool = True  # Fallback to OpenF1 if LiveF1 fails
+    
+    # LiveF1 Settings
+    livef1_session_key: Optional[str] = None
+    livef1_enable_realtime: bool = True
+    
+    # OpenF1 API (fallback)
     openf1_api_base_url: str = "https://api.openf1.org/v1"
     openf1_api_key: Optional[str] = None
     

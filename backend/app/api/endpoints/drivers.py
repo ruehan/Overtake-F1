@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional, List, Dict, Any
 
-from app.services.openf1_client import openf1_client
+from app.services.f1_data_client import f1_data_client
 from app.core.exceptions import OpenF1APIException
 from app.core.data_utils import DataTransformationUtils
 from app.core.validators import validate_driver_response, F1DataValidator
@@ -15,7 +15,7 @@ async def get_drivers(
     session_key: Optional[int] = Query(None, description="Session key to filter drivers")
 ):
     try:
-        raw_drivers = await openf1_client.get_drivers(session_key=session_key)
+        raw_drivers = await f1_data_client.get_drivers(session_key=session_key)
         
         # Transform and validate data
         normalized_drivers = []
@@ -44,7 +44,7 @@ async def get_driver(
     session_key: Optional[int] = Query(None, description="Session key to filter driver")
 ):
     try:
-        drivers = await openf1_client.get_drivers(session_key=session_key)
+        drivers = await f1_data_client.get_drivers(session_key=session_key)
         for driver in drivers:
             if driver.get("driver_number") == driver_number:
                 return driver
