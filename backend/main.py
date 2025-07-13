@@ -55,7 +55,7 @@ class LiveF1Service:
     
     async def get_drivers(self, session_key: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
-            # LiveTiming API에서 드라이버 정보 가져오기
+            # LiveTiming API에서 드라이버 정보 가져오기 시도
             data = await self._livef1_request("DriverList")
             if data:
                 drivers = []
@@ -72,16 +72,23 @@ class LiveF1Service:
                     })
                 return drivers
             
-            # Fallback: 시즌 데이터에서 가져오기
-            season = await self.get_current_season()
-            if season and hasattr(season, 'meetings') and season.meetings:
-                latest_meeting = season.meetings[-1]
-                if hasattr(latest_meeting, 'sessions') and latest_meeting.sessions:
-                    latest_session = latest_meeting.sessions[-1]
-                    if hasattr(latest_session, 'drivers'):
-                        drivers_df = latest_session.drivers
-                        if drivers_df is not None and not drivers_df.empty:
-                            return drivers_df.to_dict('records')
+            # Fallback: 현재 시즌 순위에서 드라이버 정보 생성
+            logger.info("LiveF1 DriverList not available, using fallback driver data")
+            current_standings = await self.get_driver_standings()
+            if current_standings:
+                drivers = []
+                for standing in current_standings:
+                    drivers.append({
+                        "driver_number": standing.get("driver_number", 0),
+                        "full_name": standing.get("name", ""),
+                        "name": standing.get("name", "").split()[-1] if standing.get("name") else "",
+                        "abbreviation": standing.get("code", ""),
+                        "team_name": standing.get("team", ""),
+                        "team_colour": "#ff6b35",  # 기본 색상
+                        "country_code": "",
+                        "headshot_url": ""
+                    })
+                return drivers
             
             return []
             
@@ -118,28 +125,56 @@ class LiveF1Service:
     
     async def get_live_timing(self) -> Dict[str, Any]:
         try:
-            # 실시간 타이밍 데이터
-            timing_data = await self._livef1_request("TimingData") or {}
-            position_data = await self._livef1_request("Position") or {}
+            # 실시간 타이밍 데이터 시도
+            timing_data = await self._livef1_request("TimingData")
+            position_data = await self._livef1_request("Position")
             
+            if timing_data or position_data:
+                return {
+                    "timing": timing_data or {},
+                    "positions": position_data or {},
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            # Fallback: 빈 데이터 반환 (세션이 없을 때)
+            logger.info("LiveF1 timing data not available, returning empty data")
             return {
-                "timing": timing_data,
-                "positions": position_data,
-                "timestamp": datetime.now().isoformat()
+                "timing": {},
+                "positions": {},
+                "timestamp": datetime.now().isoformat(),
+                "status": "no_active_session"
             }
             
         except Exception as e:
             logger.error(f"Failed to get live timing: {e}")
-            return {}
+            return {
+                "timing": {},
+                "positions": {},
+                "timestamp": datetime.now().isoformat(),
+                "status": "error"
+            }
     
     async def get_weather(self) -> Dict[str, Any]:
         try:
-            weather_data = await self._livef1_request("WeatherData") or {}
-            return weather_data
+            weather_data = await self._livef1_request("WeatherData")
+            if weather_data:
+                return weather_data
+            
+            # Fallback: 기본 날씨 정보 반환
+            logger.info("LiveF1 weather data not available, returning default data")
+            return {
+                "status": "no_active_session",
+                "message": "Weather data only available during active F1 sessions",
+                "timestamp": datetime.now().isoformat()
+            }
             
         except Exception as e:
             logger.error(f"Failed to get weather: {e}")
-            return {}
+            return {
+                "status": "error",
+                "message": "Weather data unavailable",
+                "timestamp": datetime.now().isoformat()
+            }
     
     async def get_driver_standings(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
         """드라이버 챔피언십 순위 가져오기"""
@@ -336,6 +371,241 @@ class LiveF1Service:
             logger.error(f"Failed to get current race: {e}")
             return None
     
+    async def get_standings_progression(self, year: Optional[int] = None) -> Dict[str, Any]:
+        """시즌 순위 변화 추적 데이터 생성"""
+        try:
+            if year is None:
+                year = datetime.now().year
+            
+            import requests
+            
+            # 해당 시즌의 모든 레이스 결과 가져오기
+            race_results = await self.get_race_results(year)
+            
+            if not race_results:
+                return {"driver_progression": [], "constructor_progression": [], "race_labels": []}
+            
+            # 드라이버별 레이스별 순위 및 포인트 추적
+            driver_progression = {}
+            constructor_progression = {}
+            race_labels = []
+            
+            # 각 레이스별로 순위 계산
+            current_driver_points = {}
+            current_constructor_points = {}
+            
+            for race in race_results:
+                if not race.get('results'):
+                    continue
+                    
+                race_label = f"R{race['round']}"
+                race_labels.append(race_label)
+                
+                # 레이스 결과에서 포인트 누적
+                for result in race['results']:
+                    driver_name = result['driver_name']
+                    team_name = result['team']
+                    points = result['points']
+                    
+                    # 드라이버 포인트 누적
+                    if driver_name not in current_driver_points:
+                        current_driver_points[driver_name] = 0
+                        driver_progression[driver_name] = []
+                    current_driver_points[driver_name] += points
+                    
+                    # 컨스트럭터 포인트 누적
+                    if team_name not in current_constructor_points:
+                        current_constructor_points[team_name] = 0
+                        constructor_progression[team_name] = []
+                    current_constructor_points[team_name] += points
+                
+                # 현재 레이스 후 순위 계산
+                sorted_drivers = sorted(current_driver_points.items(), key=lambda x: x[1], reverse=True)
+                sorted_constructors = sorted(current_constructor_points.items(), key=lambda x: x[1], reverse=True)
+                
+                # 드라이버별 현재 순위 기록
+                for position, (driver_name, points) in enumerate(sorted_drivers, 1):
+                    if driver_name not in driver_progression:
+                        driver_progression[driver_name] = []
+                    driver_progression[driver_name].append({
+                        "race": race_label,
+                        "position": position,
+                        "points": points,
+                        "round": race['round']
+                    })
+                
+                # 컨스트럭터별 현재 순위 기록
+                for position, (team_name, points) in enumerate(sorted_constructors, 1):
+                    if team_name not in constructor_progression:
+                        constructor_progression[team_name] = []
+                    constructor_progression[team_name].append({
+                        "race": race_label,
+                        "position": position,
+                        "points": points,
+                        "round": race['round']
+                    })
+            
+            # 모든 드라이버와 컨스트럭터를 포함하되, 포인트 순으로 정렬
+            sorted_drivers = sorted(current_driver_points.items(), key=lambda x: x[1], reverse=True)
+            sorted_constructors = sorted(current_constructor_points.items(), key=lambda x: x[1], reverse=True)
+            
+            # 모든 드라이버/컨스트럭터 포함 (순서만 정렬)
+            filtered_driver_progression = {name: driver_progression[name] for name, _ in sorted_drivers if name in driver_progression}
+            filtered_constructor_progression = {name: constructor_progression[name] for name, _ in sorted_constructors if name in constructor_progression}
+            
+            return {
+                "driver_progression": filtered_driver_progression,
+                "constructor_progression": filtered_constructor_progression,
+                "race_labels": race_labels,
+                "total_races": len(race_labels),
+                "year": year
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get standings progression: {e}")
+            return {"driver_progression": [], "constructor_progression": [], "race_labels": []}
+
+    async def get_race_weekend_details(self, year: Optional[int] = None, round_number: Optional[int] = None) -> Dict[str, Any]:
+        """특정 레이스 주말의 상세 정보 (일정, 결과 등)"""
+        try:
+            if year is None:
+                year = datetime.now().year
+            
+            import requests
+            
+            # 레이스 캘린더 정보
+            calendar_url = f"https://api.jolpi.ca/ergast/f1/{year}.json?limit=1000"
+            calendar_response = requests.get(calendar_url, timeout=10)
+            
+            # 레이스 결과 정보
+            if round_number:
+                results_url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_number}/results.json?limit=1000"
+                qualifying_url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_number}/qualifying.json?limit=1000"
+            else:
+                # 모든 라운드의 결과
+                results_url = f"https://api.jolpi.ca/ergast/f1/{year}/results.json?limit=1000"
+                qualifying_url = f"https://api.jolpi.ca/ergast/f1/{year}/qualifying.json?limit=1000"
+            
+            race_weekends = []
+            
+            if calendar_response.status_code == 200:
+                calendar_data = calendar_response.json()
+                races = calendar_data['MRData']['RaceTable']['Races']
+                
+                # 결과 데이터 가져오기
+                results_data = {}
+                qualifying_data = {}
+                
+                try:
+                    results_response = requests.get(results_url, timeout=10)
+                    if results_response.status_code == 200:
+                        results_json = results_response.json()
+                        for race in results_json['MRData']['RaceTable']['Races']:
+                            results_data[int(race['round'])] = race.get('Results', [])
+                except:
+                    pass
+                
+                try:
+                    qualifying_response = requests.get(qualifying_url, timeout=10)
+                    if qualifying_response.status_code == 200:
+                        qualifying_json = qualifying_response.json()
+                        for race in qualifying_json['MRData']['RaceTable']['Races']:
+                            qualifying_data[int(race['round'])] = race.get('QualifyingResults', [])
+                except:
+                    pass
+                
+                # 각 레이스 주말 정보 구성
+                for race in races:
+                    if round_number and int(race['round']) != round_number:
+                        continue
+                    
+                    race_round = int(race['round'])
+                    
+                    # 세션 일정 정리
+                    sessions = []
+                    
+                    # 연습 세션들
+                    if race.get('FirstPractice'):
+                        sessions.append({
+                            'session_type': 'Practice 1',
+                            'date': race['FirstPractice']['date'],
+                            'time': race['FirstPractice'].get('time'),
+                            'status': 'completed' if race_round in results_data else 'scheduled'
+                        })
+                    
+                    if race.get('SecondPractice'):
+                        sessions.append({
+                            'session_type': 'Practice 2',
+                            'date': race['SecondPractice']['date'],
+                            'time': race['SecondPractice'].get('time'),
+                            'status': 'completed' if race_round in results_data else 'scheduled'
+                        })
+                    
+                    if race.get('ThirdPractice'):
+                        sessions.append({
+                            'session_type': 'Practice 3',
+                            'date': race['ThirdPractice']['date'],
+                            'time': race['ThirdPractice'].get('time'),
+                            'status': 'completed' if race_round in results_data else 'scheduled'
+                        })
+                    
+                    # 스프린트 (있는 경우)
+                    if race.get('Sprint'):
+                        sessions.append({
+                            'session_type': 'Sprint',
+                            'date': race['Sprint']['date'],
+                            'time': race['Sprint'].get('time'),
+                            'status': 'completed' if race_round in results_data else 'scheduled'
+                        })
+                    
+                    # 예선
+                    if race.get('Qualifying'):
+                        sessions.append({
+                            'session_type': 'Qualifying',
+                            'date': race['Qualifying']['date'],
+                            'time': race['Qualifying'].get('time'),
+                            'status': 'completed' if race_round in qualifying_data else 'scheduled',
+                            'results': qualifying_data.get(race_round, [])
+                        })
+                    
+                    # 레이스
+                    sessions.append({
+                        'session_type': 'Race',
+                        'date': race['date'],
+                        'time': race.get('time'),
+                        'status': 'completed' if race_round in results_data else 'scheduled',
+                        'results': results_data.get(race_round, [])
+                    })
+                    
+                    weekend_info = {
+                        'round': race_round,
+                        'race_name': race['raceName'],
+                        'circuit_name': race['Circuit']['circuitName'],
+                        'circuit_id': race['Circuit']['circuitId'],
+                        'country': race['Circuit']['Location']['country'],
+                        'locality': race['Circuit']['Location']['locality'],
+                        'date': race['date'],
+                        'url': race.get('url', ''),
+                        'season': race['season'],
+                        'sessions': sessions,
+                        'weekend_status': 'completed' if race_round in results_data else 'upcoming'
+                    }
+                    
+                    race_weekends.append(weekend_info)
+            
+            if round_number:
+                return race_weekends[0] if race_weekends else {}
+            
+            return {
+                'race_weekends': race_weekends,
+                'total_weekends': len(race_weekends),
+                'year': year
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get race weekend details: {e}")
+            return {}
+
     async def get_race_results(self, year: Optional[int] = None, round_number: Optional[int] = None) -> List[Dict[str, Any]]:
         """레이스 결과 가져오기 (페이지네이션 사용)"""
         try:
@@ -426,7 +696,11 @@ class LiveF1Service:
             )
             return result
         except Exception as e:
-            logger.debug(f"LiveF1 API request failed for {endpoint}: {e}")
+            # 403 Forbidden은 정상적인 상황 (활성 세션이 없을 때)
+            if "403" in str(e) or "Forbidden" in str(e):
+                logger.debug(f"LiveF1 endpoint {endpoint} not available (no active session)")
+            else:
+                logger.warning(f"LiveF1 API request failed for {endpoint}: {e}")
             return None
     
     async def broadcast_to_websockets(self, data: Dict[str, Any]):
@@ -573,6 +847,43 @@ async def get_latest_race_result():
         # Return the most recent completed race
         latest_race = completed_races[-1]
         return {"data": latest_race}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/standings-progression")
+async def get_standings_progression(year: Optional[int] = None):
+    try:
+        progression = await livef1_service.get_standings_progression(year)
+        return {
+            "data": progression,
+            "year": year or datetime.now().year
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/race-weekends")
+async def get_race_weekends(year: Optional[int] = None):
+    try:
+        weekends = await livef1_service.get_race_weekend_details(year)
+        return {
+            "data": weekends,
+            "year": year or datetime.now().year
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/race-weekends/{round_number}")
+async def get_race_weekend_detail(round_number: int, year: Optional[int] = None):
+    try:
+        weekend = await livef1_service.get_race_weekend_details(year, round_number)
+        if not weekend:
+            raise HTTPException(status_code=404, detail="Race weekend not found")
+        return {
+            "data": weekend,
+            "year": year or datetime.now().year
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

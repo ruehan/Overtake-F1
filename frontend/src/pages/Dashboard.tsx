@@ -15,10 +15,13 @@ interface LiveTiming {
   timing: any;
   positions: any;
   timestamp: string;
+  status?: string;
 }
 
 interface Weather {
   [key: string]: any;
+  status?: string;
+  message?: string;
 }
 
 interface NextRace {
@@ -202,19 +205,24 @@ const Dashboard: React.FC = () => {
               <div>
                 <div style={{ marginBottom: '0.5rem' }}>
                   <span style={{ color: '#ccc' }}>Timing Data:</span>
-                  <span style={{ marginLeft: '0.5rem', color: liveTiming.timing ? '#10b981' : '#666' }}>
-                    {liveTiming.timing ? '✅ Active' : '❌ No Data'}
+                  <span style={{ marginLeft: '0.5rem', color: (liveTiming.timing && Object.keys(liveTiming.timing).length > 0) ? '#10b981' : '#666' }}>
+                    {(liveTiming.timing && Object.keys(liveTiming.timing).length > 0) ? '✅ Active' : '❌ No Data'}
                   </span>
                 </div>
                 <div style={{ marginBottom: '0.5rem' }}>
                   <span style={{ color: '#ccc' }}>Position Data:</span>
-                  <span style={{ marginLeft: '0.5rem', color: liveTiming.positions ? '#10b981' : '#666' }}>
-                    {liveTiming.positions ? '✅ Active' : '❌ No Data'}
+                  <span style={{ marginLeft: '0.5rem', color: (liveTiming.positions && Object.keys(liveTiming.positions).length > 0) ? '#10b981' : '#666' }}>
+                    {(liveTiming.positions && Object.keys(liveTiming.positions).length > 0) ? '✅ Active' : '❌ No Data'}
                   </span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#666' }}>
                   Last update: {new Date(liveTiming.timestamp).toLocaleTimeString()}
                 </div>
+                {liveTiming.status && (
+                  <div style={{ fontSize: '0.8rem', color: '#ccc', marginTop: '0.5rem' }}>
+                    Status: {liveTiming.status === 'no_active_session' ? 'No active F1 session' : 'Connection error'}
+                  </div>
+                )}
               </div>
             ) : (
               <p style={{ color: '#666' }}>No timing data available</p>
@@ -230,7 +238,7 @@ const Dashboard: React.FC = () => {
       {/* Weather Data */}
       <div className="f1-card">
         <h3 className="f1-card-title">🌤️ Track Conditions</h3>
-        {weather && Object.keys(weather).length > 0 ? (
+        {weather && Object.keys(weather).length > 0 && !weather.status ? (
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -253,9 +261,14 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-            No weather data available
-          </p>
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: '#ccc' }}>
+              🌤️ No Live Weather Data
+            </div>
+            <p style={{ color: '#666', fontSize: '0.9rem' }}>
+              {weather?.message || "Weather data only available during active F1 sessions"}
+            </p>
+          </div>
         )}
       </div>
 

@@ -4,6 +4,8 @@ import Dashboard from './pages/Dashboard';
 import StandingsPage from './pages/StandingsPage';
 import CalendarPage from './pages/CalendarPage';
 import RaceResultsPage from './pages/RaceResultsPage';
+import StandingsProgressionPage from './pages/StandingsProgressionPage';
+import RaceWeekendsPage from './pages/RaceWeekendsPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -14,6 +16,10 @@ function App() {
         return <Dashboard />;
       case 'standings':
         return <StandingsPage />;
+      case 'progression':
+        return <StandingsProgressionPage />;
+      case 'weekends':
+        return <RaceWeekendsPage />;
       case 'calendar':
         return <CalendarPage />;
       case 'results':
@@ -41,6 +47,18 @@ function App() {
             onClick={() => setCurrentPage('standings')}
           >
             STANDINGS
+          </button>
+          <button 
+            className={currentPage === 'progression' ? 'active' : ''}
+            onClick={() => setCurrentPage('progression')}
+          >
+            PROGRESSION
+          </button>
+          <button 
+            className={currentPage === 'weekends' ? 'active' : ''}
+            onClick={() => setCurrentPage('weekends')}
+          >
+            WEEKENDS
           </button>
           <button 
             className={currentPage === 'calendar' ? 'active' : ''}
