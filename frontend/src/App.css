@@ -23,58 +23,150 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .f1-nav-brand h1 {
   font-size: 1.8rem;
-  font-weight: 700;
-  background: linear-gradient(45deg, #ff6b35, #f7931e);
+  font-weight: 800;
+  background: linear-gradient(45deg, #ff6b35, #f7931e, #ff8c42);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+  letter-spacing: 2px;
 }
 
 .f1-nav-links {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  align-items: center;
 }
 
 .f1-nav-lang {
-  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile Menu Toggle */
+.f1-nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+}
+
+.f1-nav-toggle span {
+  width: 2rem;
+  height: 0.25rem;
+  background: #fff;
+  border-radius: 10px;
+  transition: all 0.3s linear;
+  position: relative;
+  transform-origin: 1px;
+}
+
+.f1-nav-toggle span:first-child {
+  transform: rotate(0);
+}
+
+.f1-nav-toggle span:nth-child(2) {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.f1-nav-toggle span:nth-child(3) {
+  transform: rotate(0);
 }
 
 .f1-nav-links button {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-radius: 4px;
-  text-transform: uppercase;
+  border-radius: 25px;
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.f1-nav-links button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #ff6b35, #f7931e);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.f1-nav-links button:hover::before {
+  left: 0;
 }
 
 .f1-nav-links button:hover {
-  background: rgba(255, 107, 53, 0.2);
   border-color: #ff6b35;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
 }
 
 .f1-nav-links button.active {
   background: linear-gradient(45deg, #ff6b35, #f7931e);
   border-color: #ff6b35;
-  box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+  transform: translateY(-1px);
+}
+
+.f1-nav-links button .nav-icon {
+  font-size: 1rem;
+}
+
+/* Language Toggle */
+.f1-lang-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-radius: 25px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.f1-lang-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+.lang-flag {
+  font-size: 1rem;
 }
 
 /* Main Content */
@@ -234,16 +326,80 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .f1-nav {
+    padding: 1rem 1.5rem;
+  }
+  
+  .f1-nav-links button {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .f1-nav-links button .nav-icon {
+    font-size: 0.9rem;
+  }
+}
+
 @media (max-width: 768px) {
   .f1-nav {
-    flex-direction: column;
-    gap: 1rem;
     padding: 1rem;
+    position: relative;
+  }
+  
+  .f1-nav-brand h1 {
+    font-size: 1.5rem;
+  }
+  
+  .f1-nav-toggle {
+    display: flex;
   }
   
   .f1-nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.98);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .f1-nav-links.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .f1-nav-links button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    text-align: left;
+  }
+  
+  .f1-nav-links button .nav-icon {
+    font-size: 1.2rem;
+    width: 1.5rem;
+  }
+  
+  .f1-nav-lang {
+    order: -1;
+  }
+  
+  .f1-lang-toggle {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
   }
   
   .f1-main {
@@ -254,10 +410,73 @@ body {
   .f1-grid-3,
   .f1-grid-4 {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
-  .f1-nav-links button {
-    padding: 0.5rem 1rem;
+  .f1-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .f1-card-title {
+    font-size: 1rem;
+  }
+  
+  .f1-table {
+    font-size: 0.9rem;
+  }
+  
+  .f1-table th,
+  .f1-table td {
+    padding: 0.5rem 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .f1-nav {
+    padding: 0.75rem;
+  }
+  
+  .f1-nav-brand h1 {
+    font-size: 1.3rem;
+  }
+  
+  .f1-main {
+    padding: 0.75rem;
+  }
+  
+  .f1-card {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .f1-table {
     font-size: 0.8rem;
+  }
+  
+  .f1-table th,
+  .f1-table td {
+    padding: 0.4rem 0.2rem;
+  }
+  
+  /* 드라이버 카드 모바일 최적화 */
+  .f1-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 모바일 햄버거 메뉴 애니메이션 */
+@media (max-width: 768px) {
+  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:first-child {
+    transform: rotate(45deg);
+  }
+  
+  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  
+  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:nth-child(3) {
+    transform: rotate(-45deg);
   }
 }

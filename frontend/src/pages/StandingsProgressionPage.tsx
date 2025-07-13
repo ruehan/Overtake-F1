@@ -1,5 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface ProgressionPoint {
   race: string;
@@ -92,120 +114,122 @@ const StandingsProgressionPage: React.FC = () => {
     if (!progression) return null;
 
     const items = viewType === 'drivers' ? progression.driver_progression : progression.constructor_progression;
-    const maxRounds = progression.race_labels.length;
     
-    // 차트 크기 계산
-    const chartWidth = Math.max(800, maxRounds * 60);
-    const chartHeight = 400;
-    const padding = { top: 40, right: 40, bottom: 60, left: 80 };
-    
-    const innerWidth = chartWidth - padding.left - padding.right;
-    const innerHeight = chartHeight - padding.top - padding.bottom;
+    const datasets = Object.entries(items)
+      .filter(([name]) => selectedItems.has(name))
+      .map(([name, data], index) => {
+        const color = getColorForIndex(index);
+        return {
+          label: name,
+          data: data.map(point => point.position),
+          borderColor: color,
+          backgroundColor: color + '20',
+          pointBackgroundColor: color,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3,
+          tension: 0.1,
+        };
+      });
+
+    const chartData = {
+      labels: progression.race_labels,
+      datasets: datasets,
+    };
+
+    const options: ChartOptions<'line'> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+          labels: {
+            color: '#fff',
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 20,
+            font: {
+              size: 12,
+            },
+          },
+        },
+        title: {
+          display: true,
+          text: t('progression.championshipPositionProgress'),
+          color: '#ff6b35',
+          font: {
+            size: 16,
+            weight: 'bold',
+          },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#ff6b35',
+          borderWidth: 1,
+          callbacks: {
+            title: (context) => {
+              return `${context[0].label}`;
+            },
+            label: (context) => {
+              const datasetLabel = context.dataset.label || '';
+              const position = context.parsed.y;
+              return `${datasetLabel}: P${position}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Race',
+            color: '#ccc',
+          },
+          ticks: {
+            color: '#ccc',
+            maxRotation: 45,
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)',
+          },
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Position',
+            color: '#ccc',
+          },
+          reverse: true,
+          min: 1,
+          max: 20,
+          ticks: {
+            color: '#ccc',
+            stepSize: 1,
+            callback: (value) => `P${value}`,
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)',
+          },
+        },
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false,
+      },
+    };
 
     return (
-      <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
-        <svg width={chartWidth} height={chartHeight} style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
-          {/* Grid lines */}
-          {[1, 5, 10, 15, 20].map(position => {
-            const y = padding.top + (position - 1) * (innerHeight / 19); // Top 20 positions
-            return (
-              <g key={position}>
-                <line
-                  x1={padding.left}
-                  y1={y}
-                  x2={chartWidth - padding.right}
-                  y2={y}
-                  stroke="rgba(255, 255, 255, 0.1)"
-                  strokeDasharray="2,2"
-                />
-                <text
-                  x={padding.left - 10}
-                  y={y + 4}
-                  fill="#666"
-                  fontSize="12"
-                  textAnchor="end"
-                >
-                  P{position}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Race labels */}
-          {progression.race_labels.map((label, index) => {
-            const x = padding.left + (index + 1) * (innerWidth / maxRounds);
-            return (
-              <text
-                key={label}
-                x={x}
-                y={chartHeight - 20}
-                fill="#666"
-                fontSize="10"
-                textAnchor="middle"
-                transform={`rotate(-45, ${x}, ${chartHeight - 20})`}
-              >
-                {label}
-              </text>
-            );
-          })}
-
-          {/* Position lines for selected items */}
-          {Object.entries(items)
-            .filter(([name]) => selectedItems.has(name))
-            .map(([name, data], index) => {
-              const color = getColorForIndex(index);
-              
-              // Create path for line chart
-              const pathPoints = data.map((point, pointIndex) => {
-                const x = padding.left + (pointIndex + 1) * (innerWidth / maxRounds);
-                const y = padding.top + Math.min(point.position - 1, 19) * (innerHeight / 19);
-                return `${pointIndex === 0 ? 'M' : 'L'} ${x} ${y}`;
-              }).join(' ');
-
-              return (
-                <g key={name}>
-                  {/* Line */}
-                  <path
-                    d={pathPoints}
-                    stroke={color}
-                    strokeWidth="3"
-                    fill="none"
-                    opacity="0.8"
-                  />
-                  
-                  {/* Points */}
-                  {data.map((point, pointIndex) => {
-                    const x = padding.left + (pointIndex + 1) * (innerWidth / maxRounds);
-                    const y = padding.top + Math.min(point.position - 1, 19) * (innerHeight / 19);
-                    
-                    return (
-                      <circle
-                        key={pointIndex}
-                        cx={x}
-                        cy={y}
-                        r="4"
-                        fill={color}
-                        stroke="#fff"
-                        strokeWidth="1"
-                      />
-                    );
-                  })}
-                </g>
-              );
-            })}
-
-          {/* Chart title */}
-          <text
-            x={chartWidth / 2}
-            y={20}
-            fill="#ff6b35"
-            fontSize="16"
-            fontWeight="600"
-            textAnchor="middle"
-          >
-            {t('progression.championshipPositionProgress')}
-          </text>
-        </svg>
+      <div style={{ height: '500px', marginBottom: '2rem' }}>
+        <Line data={chartData} options={options} />
       </div>
     );
   };
@@ -214,119 +238,127 @@ const StandingsProgressionPage: React.FC = () => {
     if (!progression) return null;
 
     const items = viewType === 'drivers' ? progression.driver_progression : progression.constructor_progression;
-    const maxRounds = progression.race_labels.length;
     
-    // 최대 포인트 계산
-    const maxPoints = Math.max(...Object.values(items).flat().map(p => p.points));
-    
-    const chartWidth = Math.max(800, maxRounds * 60);
-    const chartHeight = 400;
-    const padding = { top: 40, right: 40, bottom: 60, left: 80 };
-    
-    const innerWidth = chartWidth - padding.left - padding.right;
-    const innerHeight = chartHeight - padding.top - padding.bottom;
+    const datasets = Object.entries(items)
+      .filter(([name]) => selectedItems.has(name))
+      .map(([name, data], index) => {
+        const color = getColorForIndex(index);
+        return {
+          label: name,
+          data: data.map(point => point.points),
+          borderColor: color,
+          backgroundColor: color + '20',
+          pointBackgroundColor: color,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3,
+          tension: 0.1,
+          fill: false,
+        };
+      });
+
+    const chartData = {
+      labels: progression.race_labels,
+      datasets: datasets,
+    };
+
+    const options: ChartOptions<'line'> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+          labels: {
+            color: '#fff',
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 20,
+            font: {
+              size: 12,
+            },
+          },
+        },
+        title: {
+          display: true,
+          text: t('progression.championshipPointsProgress'),
+          color: '#ff6b35',
+          font: {
+            size: 16,
+            weight: 'bold',
+          },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#ff6b35',
+          borderWidth: 1,
+          callbacks: {
+            title: (context) => {
+              return `${context[0].label}`;
+            },
+            label: (context) => {
+              const datasetLabel = context.dataset.label || '';
+              const points = context.parsed.y;
+              return `${datasetLabel}: ${points} pts`;
+            },
+            afterBody: (context) => {
+              if (context.length > 1) {
+                const sortedContext = [...context].sort((a, b) => b.parsed.y - a.parsed.y);
+                return ['', 'Ranking at this point:', ...sortedContext.map((ctx, idx) => `${idx + 1}. ${ctx.dataset.label}: ${ctx.parsed.y} pts`)];
+              }
+              return [];
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Race',
+            color: '#ccc',
+          },
+          ticks: {
+            color: '#ccc',
+            maxRotation: 45,
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)',
+          },
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Points',
+            color: '#ccc',
+          },
+          beginAtZero: true,
+          ticks: {
+            color: '#ccc',
+            callback: (value) => `${value} pts`,
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)',
+          },
+        },
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false,
+      },
+    };
 
     return (
-      <div style={{ overflowX: 'auto' }}>
-        <svg width={chartWidth} height={chartHeight} style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
-          {/* Grid lines */}
-          {[0, Math.floor(maxPoints * 0.25), Math.floor(maxPoints * 0.5), Math.floor(maxPoints * 0.75), maxPoints].map(points => {
-            const y = padding.top + innerHeight - (points / maxPoints) * innerHeight;
-            return (
-              <g key={points}>
-                <line
-                  x1={padding.left}
-                  y1={y}
-                  x2={chartWidth - padding.right}
-                  y2={y}
-                  stroke="rgba(255, 255, 255, 0.1)"
-                  strokeDasharray="2,2"
-                />
-                <text
-                  x={padding.left - 10}
-                  y={y + 4}
-                  fill="#666"
-                  fontSize="12"
-                  textAnchor="end"
-                >
-                  {points}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Race labels */}
-          {progression.race_labels.map((label, index) => {
-            const x = padding.left + (index + 1) * (innerWidth / maxRounds);
-            return (
-              <text
-                key={label}
-                x={x}
-                y={chartHeight - 20}
-                fill="#666"
-                fontSize="10"
-                textAnchor="middle"
-                transform={`rotate(-45, ${x}, ${chartHeight - 20})`}
-              >
-                {label}
-              </text>
-            );
-          })}
-
-          {/* Points lines for selected items */}
-          {Object.entries(items)
-            .filter(([name]) => selectedItems.has(name))
-            .map(([name, data], index) => {
-              const color = getColorForIndex(index);
-              
-              const pathPoints = data.map((point, pointIndex) => {
-                const x = padding.left + (pointIndex + 1) * (innerWidth / maxRounds);
-                const y = padding.top + innerHeight - (point.points / maxPoints) * innerHeight;
-                return `${pointIndex === 0 ? 'M' : 'L'} ${x} ${y}`;
-              }).join(' ');
-
-              return (
-                <g key={name}>
-                  <path
-                    d={pathPoints}
-                    stroke={color}
-                    strokeWidth="3"
-                    fill="none"
-                    opacity="0.8"
-                  />
-                  
-                  {data.map((point, pointIndex) => {
-                    const x = padding.left + (pointIndex + 1) * (innerWidth / maxRounds);
-                    const y = padding.top + innerHeight - (point.points / maxPoints) * innerHeight;
-                    
-                    return (
-                      <circle
-                        key={pointIndex}
-                        cx={x}
-                        cy={y}
-                        r="4"
-                        fill={color}
-                        stroke="#fff"
-                        strokeWidth="1"
-                      />
-                    );
-                  })}
-                </g>
-              );
-            })}
-
-          {/* Chart title */}
-          <text
-            x={chartWidth / 2}
-            y={20}
-            fill="#ff6b35"
-            fontSize="16"
-            fontWeight="600"
-            textAnchor="middle"
-          >
-            {t('progression.championshipPointsProgress')}
-          </text>
-        </svg>
+      <div style={{ height: '500px', marginBottom: '2rem' }}>
+        <Line data={chartData} options={options} />
       </div>
     );
   };

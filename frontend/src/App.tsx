@@ -12,6 +12,7 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
   const renderPage = () => {
@@ -37,59 +38,84 @@ const AppContent = () => {
     }
   };
 
+  const handlePageChange = (page: string) => {
+    setCurrentPage(page);
+    setIsMobileMenuOpen(false); // 모바일에서 페이지 변경 시 메뉴 닫기
+  };
+
   return (
     <div className="f1-app">
       <nav className="f1-nav">
         <div className="f1-nav-brand">
-          <h1>🏎️ F1 LIVE</h1>
+          <h1>🏎️ OVERTAKE</h1>
         </div>
-        <div className="f1-nav-links">
+
+        {/* Mobile Menu Toggle */}
+        <button 
+          className="f1-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle navigation"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div className={`f1-nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
           <button 
             className={currentPage === 'dashboard' ? 'active' : ''}
-            onClick={() => setCurrentPage('dashboard')}
+            onClick={() => handlePageChange('dashboard')}
           >
+            <span className="nav-icon">🏠</span>
             {t('nav.live')}
           </button>
           <button 
             className={currentPage === 'standings' ? 'active' : ''}
-            onClick={() => setCurrentPage('standings')}
+            onClick={() => handlePageChange('standings')}
           >
+            <span className="nav-icon">🏆</span>
             {t('nav.standings')}
           </button>
           <button 
             className={currentPage === 'progression' ? 'active' : ''}
-            onClick={() => setCurrentPage('progression')}
+            onClick={() => handlePageChange('progression')}
           >
+            <span className="nav-icon">📈</span>
             {t('nav.progression')}
           </button>
           <button 
             className={currentPage === 'weekends' ? 'active' : ''}
-            onClick={() => setCurrentPage('weekends')}
+            onClick={() => handlePageChange('weekends')}
           >
+            <span className="nav-icon">🏁</span>
             {t('nav.weekends')}
           </button>
           <button 
             className={currentPage === 'statistics' ? 'active' : ''}
-            onClick={() => setCurrentPage('statistics')}
+            onClick={() => handlePageChange('statistics')}
           >
+            <span className="nav-icon">📊</span>
             {t('nav.statistics')}
           </button>
           <button 
             className={currentPage === 'circuits' ? 'active' : ''}
-            onClick={() => setCurrentPage('circuits')}
+            onClick={() => handlePageChange('circuits')}
           >
+            <span className="nav-icon">🛣️</span>
             {t('nav.circuits')}
           </button>
           <button 
             className={currentPage === 'calendar' ? 'active' : ''}
-            onClick={() => setCurrentPage('calendar')}
+            onClick={() => handlePageChange('calendar')}
           >
+            <span className="nav-icon">📅</span>
             {t('nav.calendar')}
           </button>
           <button 
             className={currentPage === 'results' ? 'active' : ''}
-            onClick={() => setCurrentPage('results')}
+            onClick={() => handlePageChange('results')}
           >
+            <span className="nav-icon">🏁</span>
             {t('nav.results')}
           </button>
         </div>
@@ -97,18 +123,10 @@ const AppContent = () => {
         {/* Language Toggle */}
         <div className="f1-nav-lang">
           <button
+            className="f1-lang-toggle"
             onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: '#fff',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              fontSize: '0.8rem',
-              fontWeight: '600'
-            }}
           >
+            <span className="lang-flag">{language === 'en' ? '🇰🇷' : '🇺🇸'}</span>
             {language === 'en' ? '한글' : 'ENG'}
           </button>
         </div>
