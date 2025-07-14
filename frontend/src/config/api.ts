@@ -51,6 +51,9 @@ export const WS_BASE_URL = process.env.REACT_APP_WS_URL || wsUrl;
 export const API_ENDPOINTS = {
   // Driver endpoints
   drivers: `${API_BASE_URL}/v1/drivers`,
+  driverDetail: (driverNumber: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}`,
+  driverSeasonStats: (driverNumber: number, year?: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}/season-stats${year ? `?year=${year}` : ''}`,
+  driverCareerStats: (driverNumber: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}/career-stats`,
   driverStandings: (year: number) => `${API_BASE_URL}/v1/driver-standings?year=${year}`,
   
   // Constructor endpoints
@@ -66,7 +69,7 @@ export const API_ENDPOINTS = {
   latestResult: `${API_BASE_URL}/v1/race-results/latest`,
   
   // Statistics
-  statistics: (year: number, type: string) => `${API_BASE_URL}/v1/statistics?year=${year}&type=${type}`,
+  statistics: (year: number, type: string) => `${API_BASE_URL}/v1/${type === 'drivers' ? 'driver-statistics' : 'team-statistics'}?year=${year}`,
   standingsProgression: (year: number) => `${API_BASE_URL}/v1/standings-progression?year=${year}`,
   
   // Race weekends

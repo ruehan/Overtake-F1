@@ -36,7 +36,11 @@ interface NextRace {
   time?: string;
 }
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onDriverClick?: (driverNumber: number) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onDriverClick }) => {
   const { t, translateCountry, formatMessage } = useLanguage();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [liveTiming, setLiveTiming] = useState<LiveTiming | null>(null);
@@ -287,7 +291,28 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="f1-grid f1-grid-4">
             {drivers.map((driver) => (
-              <div key={driver.driver_number} className="f1-card" style={{ marginBottom: 0, padding: '1.2rem' }}>
+              <div 
+                key={driver.driver_number} 
+                className="f1-card" 
+                style={{ 
+                  marginBottom: 0, 
+                  padding: '1.2rem',
+                  cursor: onDriverClick ? 'pointer' : 'default',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                }}
+                onClick={() => onDriverClick && onDriverClick(driver.driver_number)}
+                onMouseEnter={(e) => {
+                  if (onDriverClick) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = `0 8px 16px ${driver.team_colour || '#ff6b35'}33`;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (onDriverClick) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}>
                 <div style={{ display: 'flex', gap: '1.2rem', height: '140px' }}>
                   {/* 왼쪽 정보 영역 */}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}>

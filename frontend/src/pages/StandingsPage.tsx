@@ -23,7 +23,11 @@ interface ConstructorStanding {
   logo_url?: string;
 }
 
-const StandingsPage: React.FC = () => {
+interface StandingsPageProps {
+  onDriverClick?: (driverNumber: number) => void;
+}
+
+const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
   const { t } = useLanguage();
   usePageMeta('standings');
   const [activeTab, setActiveTab] = useState<'drivers' | 'constructors'>('drivers');
@@ -196,7 +200,23 @@ const StandingsPage: React.FC = () => {
               </thead>
               <tbody>
                 {driverStandings.map((driver) => (
-                  <tr key={driver.driver_number}>
+                  <tr 
+                    key={driver.driver_number}
+                    style={{ 
+                      cursor: onDriverClick ? 'pointer' : 'default',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onClick={() => onDriverClick && onDriverClick(driver.driver_number)}
+                    onMouseEnter={(e) => {
+                      if (onDriverClick) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 107, 53, 0.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (onDriverClick) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className={`position ${getPositionClass(driver.position)}`}>

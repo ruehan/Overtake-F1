@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface DriverStat {
   position: number;
@@ -51,7 +52,7 @@ const StatisticsPage: React.FC = () => {
     
     try {
       const endpoint = viewType === 'drivers' ? 'driver-statistics' : 'team-statistics';
-      const response = await fetch(`http://localhost:8000/api/v1/${endpoint}?year=${selectedYear}`);
+      const response = await fetch(API_ENDPOINTS.statistics(selectedYear, viewType));
       if (!response.ok) throw new Error('Failed to fetch statistics data');
       const data = await response.json();
       setStatisticsData(data.data);

@@ -11,6 +11,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import socketio
+import requests
 
 # 환경 변수 로드
 load_dotenv()
@@ -81,6 +82,75 @@ class LiveF1Service:
         self.current_season = None
         self.current_session = None
         self.websocket_connections: List[WebSocket] = []
+    
+    def _get_nationality_from_country_code(self, country_code: str) -> str:
+        """국가 코드를 국적으로 변환"""
+        country_map = {
+            "NED": "Dutch",
+            "GBR": "British", 
+            "ESP": "Spanish",
+            "MON": "Monégasque",
+            "AUS": "Australian",
+            "FRA": "French",
+            "GER": "German",
+            "MEX": "Mexican",
+            "FIN": "Finnish",
+            "CAN": "Canadian",
+            "JPN": "Japanese",
+            "THA": "Thai",
+            "DEN": "Danish",
+            "CHN": "Chinese"
+        }
+        return country_map.get(country_code, "Unknown")
+    
+    async def _get_current_season_stats(self, driver_number: int) -> dict:
+        """2025 시즌 실제 통계 가져오기"""
+        try:
+            # 2025년 모든 레이스 세션 가져오기
+            sessions_url = "https://api.openf1.org/v1/sessions?year=2025&session_type=Race"
+            sessions_response = requests.get(sessions_url, timeout=10)
+            
+            season_stats = {
+                "season_wins": 0,
+                "season_podiums": 0,
+                "season_points": 0
+            }
+            
+            if sessions_response.status_code == 200:
+                sessions = sessions_response.json()
+                
+                for session in sessions:
+                    session_key = session["session_key"]
+                    
+                    # 각 세션의 결과 가져오기
+                    results_url = f"https://api.openf1.org/v1/results?session_key={session_key}&driver_number={driver_number}"
+                    results_response = requests.get(results_url, timeout=5)
+                    
+                    if results_response.status_code == 200:
+                        results = results_response.json()
+                        
+                        if results:
+                            result = results[0]
+                            position = result.get("position")
+                            points = result.get("points", 0)
+                            
+                            if position:
+                                if position == 1:
+                                    season_stats["season_wins"] += 1
+                                if position <= 3:
+                                    season_stats["season_podiums"] += 1
+                                
+                                season_stats["season_points"] += points
+            
+            return season_stats
+            
+        except Exception as e:
+            logger.warning(f"Failed to get current season stats for driver {driver_number}: {e}")
+            return {
+                "season_wins": 0,
+                "season_podiums": 0,
+                "season_points": 0
+            }
     
     async def get_current_season(self, year: Optional[int] = None):
         if year is None:
@@ -166,6 +236,214 @@ class LiveF1Service:
         except Exception as e:
             logger.error(f"Failed to get drivers: {e}")
             return []
+    
+    async def get_driver_detail(self, driver_number: int) -> Optional[Dict[str, Any]]:
+        try:
+            # 먼저 드라이버 목록에서 기본 정보 찾기
+            drivers = await self.get_drivers()
+            driver = next((d for d in drivers if d["driver_number"] == driver_number), None)
+            
+            if not driver:
+                return None
+            
+            # OpenF1 API에서 실제 데이터 가져오기
+            try:
+                # OpenF1 API에서 드라이버 정보 가져오기
+                openf1_url = f"https://api.openf1.org/v1/drivers?driver_number={driver_number}"
+                response = requests.get(openf1_url, timeout=10)
+                
+                ergast_data = {}
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        # 최신 정보 가져오기
+                        latest_data = data[0]
+                        ergast_data = {
+                            "nationality": self._get_nationality_from_country_code(latest_data.get('country_code', '')),
+                            "date_of_birth": "",  # OpenF1에서는 제공하지 않음
+                            "place_of_birth": ""  # OpenF1에서는 제공하지 않음
+                        }
+                
+                # 2025 시즌 실제 결과 가져오기
+                current_season_stats = await self._get_current_season_stats(driver_number)
+                logger.info(f"Current season stats for driver {driver_number}: {current_season_stats}")
+                
+                # 드라이버별 상세 정보 (하드코딩)
+                driver_stats = {
+                    1: {  # Max Verstappen
+                        "nationality": "Dutch",
+                        "date_of_birth": "1997-09-30",
+                        "place_of_birth": "Hasselt, Belgium",
+                        "race_wins": 62,
+                        "podiums": 107,
+                        "pole_positions": 40,
+                        "fastest_laps": 33,
+                        "career_points": 2586,
+                        "first_entry": 2015,
+                        "world_championships": 3
+                    },
+                    4: {  # Lando Norris
+                        "nationality": "British",
+                        "date_of_birth": "1999-11-13",
+                        "place_of_birth": "Bristol, England",
+                        "race_wins": 4,
+                        "podiums": 22,
+                        "pole_positions": 8,
+                        "fastest_laps": 7,
+                        "career_points": 650,
+                        "first_entry": 2019,
+                        "world_championships": 0
+                    },
+                    81: {  # Oscar Piastri
+                        "nationality": "Australian",
+                        "date_of_birth": "2001-04-06",
+                        "place_of_birth": "Melbourne, Australia",
+                        "race_wins": 2,
+                        "podiums": 12,
+                        "pole_positions": 1,
+                        "fastest_laps": 1,
+                        "career_points": 292,
+                        "first_entry": 2023,
+                        "world_championships": 0
+                    },
+                    16: {  # Charles Leclerc
+                        "nationality": "Monégasque",
+                        "date_of_birth": "1997-10-16",
+                        "place_of_birth": "Monte Carlo, Monaco",
+                        "race_wins": 7,
+                        "podiums": 39,
+                        "pole_positions": 26,
+                        "fastest_laps": 9,
+                        "career_points": 1196,
+                        "first_entry": 2018,
+                        "world_championships": 0
+                    },
+                    55: {  # Carlos Sainz
+                        "nationality": "Spanish",
+                        "date_of_birth": "1994-09-01",
+                        "place_of_birth": "Madrid, Spain",
+                        "race_wins": 3,
+                        "podiums": 25,
+                        "pole_positions": 6,
+                        "fastest_laps": 3,
+                        "career_points": 1013,
+                        "first_entry": 2015,
+                        "world_championships": 0
+                    },
+                    44: {  # Lewis Hamilton
+                        "nationality": "British",
+                        "date_of_birth": "1985-01-07",
+                        "place_of_birth": "Stevenage, England",
+                        "race_wins": 103,
+                        "podiums": 197,
+                        "pole_positions": 104,
+                        "fastest_laps": 67,
+                        "career_points": 4526,
+                        "first_entry": 2007,
+                        "world_championships": 7,
+                        # 2025 시즌 데이터
+                        "season_wins": 0,
+                        "season_podiums": 0,
+                        "season_points": 0
+                    },
+                    63: {  # George Russell
+                        "nationality": "British",
+                        "date_of_birth": "1998-02-15",
+                        "place_of_birth": "King's Lynn, England",
+                        "race_wins": 1,
+                        "podiums": 13,
+                        "pole_positions": 3,
+                        "fastest_laps": 7,
+                        "career_points": 376,
+                        "first_entry": 2019,
+                        "world_championships": 0
+                    },
+                    33: {  # Max Verstappen (if using number 33 instead of 1)
+                        "nationality": "Dutch",
+                        "date_of_birth": "1997-09-30",
+                        "place_of_birth": "Hasselt, Belgium",
+                        "race_wins": 62,
+                        "podiums": 107,
+                        "pole_positions": 40,
+                        "fastest_laps": 33,
+                        "career_points": 2586,
+                        "first_entry": 2015,
+                        "world_championships": 3
+                    }
+                }
+                
+                if driver_number in driver_stats:
+                    stats = driver_stats[driver_number]
+                    ergast_data.update({
+                        "nationality": stats["nationality"],
+                        "date_of_birth": stats["date_of_birth"],
+                        "place_of_birth": stats["place_of_birth"]
+                    })
+                    career_stats = {
+                        "race_wins": stats["race_wins"],
+                        "podiums": stats["podiums"],
+                        "pole_positions": stats["pole_positions"],
+                        "fastest_laps": stats["fastest_laps"],
+                        "career_points": stats["career_points"],
+                        "first_entry": stats["first_entry"],
+                        "world_championships": stats["world_championships"],
+                        # 현재 시즌 데이터는 실제 API에서 가져온 값 사용
+                        "season_wins": current_season_stats["season_wins"],
+                        "season_podiums": current_season_stats["season_podiums"],
+                        "season_points": current_season_stats["season_points"]
+                    }
+                else:
+                    # 기본값 설정
+                    career_stats = {
+                        "race_wins": 0,
+                        "podiums": 0,
+                        "pole_positions": 0,
+                        "fastest_laps": 0,
+                        "career_points": 0,
+                        "first_entry": None,
+                        "world_championships": 0,
+                        # 현재 시즌 데이터는 실제 API에서 가져온 값 사용
+                        "season_wins": current_season_stats["season_wins"],
+                        "season_podiums": current_season_stats["season_podiums"],
+                        "season_points": current_season_stats["season_points"]
+                    }
+                
+            except Exception as e:
+                logger.warning(f"Failed to fetch additional driver data for {driver_number}: {e}")
+                # 실패 시에도 현재 시즌 데이터는 시도해보기
+                current_season_stats = await self._get_current_season_stats(driver_number)
+                
+                ergast_data = {
+                    "nationality": "Unknown",
+                    "date_of_birth": "",
+                    "place_of_birth": "Unknown"
+                }
+                career_stats = {
+                    "race_wins": 0,
+                    "podiums": 0,
+                    "pole_positions": 0,
+                    "fastest_laps": 0,
+                    "career_points": 0,
+                    "first_entry": None,
+                    "world_championships": 0,
+                    # 현재 시즌 데이터는 실제 API에서 가져온 값 사용
+                    "season_wins": current_season_stats["season_wins"],
+                    "season_podiums": current_season_stats["season_podiums"],
+                    "season_points": current_season_stats["season_points"]
+                }
+            
+            # 상세 정보 병합
+            detailed_driver = {
+                **driver,
+                **ergast_data,
+                **career_stats
+            }
+            
+            return detailed_driver
+            
+        except Exception as e:
+            logger.error(f"Failed to get driver detail for {driver_number}: {e}")
+            return None
     
     async def get_sessions(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
         try:
@@ -792,10 +1070,16 @@ class LiveF1Service:
                 else:
                     url = f"https://api.jolpi.ca/ergast/f1/{year}/drivers/{driver_id}/results.json"
                 
+                logger.info(f"DEBUG: Requesting URL: {url}")
                 response = requests.get(url, timeout=10)
+                logger.info(f"DEBUG: Response status: {response.status_code}")
+                
                 if response.status_code == 200:
                     data = response.json()
                     races = data['MRData']['RaceTable']['Races']
+                    
+                    logger.info(f"DEBUG: Found {len(races)} races for {driver_id} in {year}")
+                    logger.info(f"DEBUG: Sample race data: {races[:1] if races else 'No races'}")
                     
                     wins = podiums = points_finishes = dnfs = 0
                     total_points = 0
@@ -912,6 +1196,96 @@ class LiveF1Service:
                 
         except Exception as e:
             logger.error(f"Failed to get driver statistics: {e}")
+            return {}
+
+    async def get_driver_career_statistics(self, driver_id: str) -> Dict[str, Any]:
+        """드라이버의 전체 커리어 통계를 현재 시즌부터 역순으로 계산"""
+        try:
+            career_stats = {
+                "race_wins": 0,
+                "podiums": 0,
+                "pole_positions": 0,
+                "fastest_laps": 0,
+                "career_points": 0,
+                "world_championships": 0,
+                "first_entry": None,
+                "seasons_data": []
+            }
+            
+            current_year = datetime.now().year
+            year = current_year
+            consecutive_empty_years = 0
+            max_empty_years = 3  # 연속 3년 데이터 없으면 중단
+            
+            while consecutive_empty_years < max_empty_years and year >= 1950:  # F1 시작 연도
+                try:
+                    logger.info(f"Fetching career statistics for {driver_id} in {year}")
+                    year_stats = await self.get_driver_statistics(year=year, driver_id=driver_id)
+                    
+                    if year_stats and 'season_stats' in year_stats:
+                        stats = year_stats['season_stats']
+                        races_entered = stats.get("races_entered", 0)
+                        
+                        if races_entered > 0:
+                            # 데이터가 있는 경우
+                            consecutive_empty_years = 0
+                            
+                            # 첫 참가 연도 업데이트
+                            if career_stats["first_entry"] is None or year < career_stats["first_entry"]:
+                                career_stats["first_entry"] = year
+                            
+                            # 통계 누적
+                            career_stats["race_wins"] += stats.get("wins", 0)
+                            career_stats["podiums"] += stats.get("podiums", 0)
+                            career_stats["career_points"] += stats.get("total_points", 0)
+                            career_stats["fastest_laps"] += stats.get("fastest_laps", 0)
+                            
+                            # 폴 포지션 추정 (승수의 80%)
+                            career_stats["pole_positions"] += int(stats.get("wins", 0) * 0.8)
+                            
+                            # 월드 챔피언십 체크
+                            try:
+                                standings = await self.get_driver_standings(year)
+                                for driver_standing in standings:
+                                    if driver_standing.get("driver_number") == stats.get("driver_number"):
+                                        if driver_standing.get("position") == 1:
+                                            career_stats["world_championships"] += 1
+                                        break
+                            except Exception as e:
+                                logger.warning(f"Failed to get standings for year {year}: {e}")
+                            
+                            # 연도별 데이터 저장
+                            career_stats["seasons_data"].append({
+                                "year": year,
+                                "wins": stats.get("wins", 0),
+                                "podiums": stats.get("podiums", 0),
+                                "points": stats.get("total_points", 0),
+                                "fastest_laps": stats.get("fastest_laps", 0),
+                                "races_entered": races_entered
+                            })
+                            
+                            logger.info(f"Added {year} data for {driver_id}: wins={stats.get('wins', 0)}, podiums={stats.get('podiums', 0)}")
+                        else:
+                            consecutive_empty_years += 1
+                            logger.info(f"No race data for {driver_id} in {year}, empty count: {consecutive_empty_years}")
+                    else:
+                        consecutive_empty_years += 1
+                        logger.info(f"No statistics found for {driver_id} in {year}, empty count: {consecutive_empty_years}")
+                        
+                except Exception as e:
+                    consecutive_empty_years += 1
+                    logger.warning(f"Error fetching statistics for {driver_id} in {year}: {e}")
+                
+                year -= 1
+            
+            # 시즌 데이터를 시간순으로 정렬 (오래된 것부터)
+            career_stats["seasons_data"].sort(key=lambda x: x["year"])
+            
+            logger.info(f"Career statistics completed for {driver_id}: {career_stats}")
+            return career_stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get career statistics for {driver_id}: {e}")
             return {}
 
     async def get_circuit_information(self, year: Optional[int] = None, circuit_id: Optional[str] = None) -> Dict[str, Any]:
@@ -1245,6 +1619,150 @@ async def get_drivers(session_key: Optional[str] = None):
     try:
         drivers = await livef1_service.get_drivers(session_key)
         return {"data": drivers, "count": len(drivers)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/drivers/{driver_number}")
+async def get_driver_detail(driver_number: int):
+    try:
+        driver = await livef1_service.get_driver_detail(driver_number)
+        if not driver:
+            raise HTTPException(status_code=404, detail="Driver not found")
+        return {"data": driver}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/drivers/{driver_number}/season-stats")
+async def get_driver_season_stats(driver_number: int, year: Optional[int] = None):
+    try:
+        if year is None:
+            year = datetime.now().year
+        
+        # 드라이버 번호를 드라이버 ID로 매핑
+        driver_number_to_id = {
+            23: "albon",
+            14: "alonso", 
+            12: "antonelli",
+            87: "bearman",
+            5: "bortoleto",
+            43: "colapinto",
+            7: "doohan",
+            10: "gasly",
+            6: "hadjar",
+            44: "hamilton",
+            27: "hulkenberg",
+            30: "lawson",
+            16: "leclerc",
+            4: "norris",
+            31: "ocon",
+            81: "piastri",
+            63: "russell",
+            55: "sainz",
+            18: "stroll",
+            22: "tsunoda",
+            33: "verstappen"
+        }
+        
+        # 드라이버 ID가 없으면 에러 반환
+        driver_id = driver_number_to_id.get(driver_number)
+        if not driver_id:
+            raise HTTPException(status_code=404, detail=f"Driver with number {driver_number} not found")
+        
+        # livef1_service.get_driver_statistics를 사용하여 실제 통계 가져오기
+        year_stats = await livef1_service.get_driver_statistics(year=year, driver_id=driver_id)
+        
+        season_stats = {
+            "season_wins": 0,
+            "season_podiums": 0,
+            "season_points": 0,
+            "season_position": None
+        }
+        
+        if year_stats and 'season_stats' in year_stats:
+            stats = year_stats['season_stats']
+            season_stats["season_wins"] = stats.get("wins", 0)
+            season_stats["season_podiums"] = stats.get("podiums", 0)
+            season_stats["season_points"] = stats.get("total_points", 0)
+        
+        # 드라이버 순위에서 현재 시즌 순위 가져오기
+        standings = await livef1_service.get_driver_standings(year)
+        for driver_standing in standings:
+            if driver_standing["driver_number"] == driver_number:
+                season_stats["season_position"] = driver_standing.get("position", None)
+                break
+        
+        return {"data": season_stats, "year": year}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/drivers/{driver_number}/career-stats")
+async def get_driver_career_stats(driver_number: int):
+    try:
+        logger.info(f"DEBUG: Getting career stats for driver_number={driver_number}")
+        # 드라이버 번호를 드라이버 ID로 매핑
+        driver_number_to_id = {
+            1: "max_verstappen",   # Max Verstappen (champion's number)
+            23: "albon",
+            14: "alonso", 
+            12: "antonelli",
+            87: "bearman",
+            5: "bortoleto",
+            43: "colapinto",
+            7: "doohan",
+            10: "gasly",
+            6: "hadjar",
+            44: "hamilton",
+            27: "hulkenberg",
+            30: "lawson",
+            16: "leclerc",
+            4: "norris",
+            31: "ocon",
+            81: "piastri",
+            63: "russell",
+            55: "sainz",
+            18: "stroll",
+            22: "tsunoda",
+            33: "verstappen"   # Max Verstappen (permanent number)
+        }
+        
+        # 드라이버별 실제 데뷔 연도
+        driver_debut_years = {
+            1: 2015,   # Max Verstappen (champion's number)
+            23: 2019,  # Alexander Albon
+            14: 2005,  # Fernando Alonso
+            12: 2025,  # Antonelli
+            87: 2024,  # Bearman
+            5: 2025,   # Bortoleto
+            43: 2024,  # Colapinto
+            7: 2025,   # Doohan
+            10: 2017,  # Pierre Gasly
+            6: 2025,   # Hadjar
+            44: 2007,  # Lewis Hamilton
+            27: 2010,  # Nico Hulkenberg
+            30: 2023,  # Lawson
+            16: 2018,  # Charles Leclerc
+            4: 2019,   # Lando Norris
+            31: 2020,  # Esteban Ocon
+            81: 2023,  # Oscar Piastri
+            63: 2019,  # George Russell
+            55: 2015,  # Carlos Sainz
+            18: 2017,  # Lance Stroll
+            22: 2021,  # Yuki Tsunoda
+            33: 2015,  # Max Verstappen (permanent number)
+        }
+        
+        # 드라이버 ID가 없으면 에러 반환
+        driver_id = driver_number_to_id.get(driver_number)
+        logger.info(f"DEBUG: Mapped driver_number={driver_number} to driver_id={driver_id}")
+        if not driver_id:
+            raise HTTPException(status_code=404, detail=f"Driver with number {driver_number} not found")
+        
+        # 새로운 커리어 통계 함수 사용 (현재 시즌부터 역순으로 계산)
+        career_stats = await livef1_service.get_driver_career_statistics(driver_id)
+        
+        return {"data": career_stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

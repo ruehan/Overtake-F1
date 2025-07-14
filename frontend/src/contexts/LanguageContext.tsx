@@ -161,6 +161,23 @@ const translations = {
     'common.selectAll': 'Select All',
     'common.clearAll': 'Clear All',
     'common.races': 'races',
+    'common.back': 'Back',
+    'common.close': 'Close',
+    
+    // Driver Detail
+    'driver.personalInfo': 'Personal Information',
+    'driver.careerStats': 'Career Statistics',
+    'driver.currentSeason': 'Current Season Performance',
+    'driver.nationality': 'Nationality',
+    'driver.dateOfBirth': 'Date of Birth',
+    'driver.placeOfBirth': 'Place of Birth',
+    'driver.f1Debut': 'F1 Debut',
+    'driver.worldChampionships': 'World Championships',
+    'driver.raceWins': 'Race Wins',
+    'driver.podiums': 'Podiums',
+    'driver.polePositions': 'Pole Positions',
+    'driver.fastestLaps': 'Fastest Laps',
+    'driver.careerPoints': 'Career Points',
     
     // Data translations
     'data.finished': 'Finished',
@@ -373,6 +390,23 @@ const translations = {
     'common.selectAll': '전체 선택',
     'common.clearAll': '전체 해제',
     'common.races': '레이스',
+    'common.back': '뒤로',
+    'common.close': '닫기',
+    
+    // Driver Detail
+    'driver.personalInfo': '개인 정보',
+    'driver.careerStats': '경력 통계',
+    'driver.currentSeason': '현재 시즌 성과',
+    'driver.nationality': '국적',
+    'driver.dateOfBirth': '생년월일',
+    'driver.placeOfBirth': '출생지',
+    'driver.f1Debut': 'F1 데뷔',
+    'driver.worldChampionships': '월드 챔피언십',
+    'driver.raceWins': '레이스 승리',
+    'driver.podiums': '포디움',
+    'driver.polePositions': '폴 포지션',
+    'driver.fastestLaps': '최고 랩타임',
+    'driver.careerPoints': '통산 포인트',
     
     // Data translations
     'data.finished': '완주',

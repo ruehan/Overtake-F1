@@ -8,19 +8,22 @@ import StandingsProgressionPage from './pages/StandingsProgressionPage';
 import RaceWeekendsPage from './pages/RaceWeekendsPage';
 import StatisticsPage from './pages/StatisticsPage';
 import CircuitsPage from './pages/CircuitsPage';
+import DriverDetailModal from './components/DriverDetailModal';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedDriverNumber, setSelectedDriverNumber] = useState<number | null>(null);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onDriverClick={handleDriverClick} />;
       case 'standings':
-        return <StandingsPage />;
+        return <StandingsPage onDriverClick={handleDriverClick} />;
       case 'progression':
         return <StandingsProgressionPage />;
       case 'weekends':
@@ -34,13 +37,24 @@ const AppContent = () => {
       case 'results':
         return <RaceResultsPage />;
       default:
-        return <Dashboard />;
+        return <Dashboard onDriverClick={handleDriverClick} />;
     }
   };
 
   const handlePageChange = (page: string) => {
     setCurrentPage(page);
     setIsMobileMenuOpen(false); // 모바일에서 페이지 변경 시 메뉴 닫기
+  };
+
+  const handleDriverClick = (driverNumber: number) => {
+    setSelectedDriverNumber(driverNumber);
+    setIsDriverModalOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleCloseDriverModal = () => {
+    setIsDriverModalOpen(false);
+    setSelectedDriverNumber(null);
   };
 
   return (
@@ -135,6 +149,15 @@ const AppContent = () => {
       <main className="f1-main">
         {renderPage()}
       </main>
+      
+      {/* Driver Detail Modal */}
+      {selectedDriverNumber !== null && (
+        <DriverDetailModal 
+          driverNumber={selectedDriverNumber}
+          isOpen={isDriverModalOpen}
+          onClose={handleCloseDriverModal}
+        />
+      )}
     </div>
   );
 };
