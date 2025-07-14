@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 interface DriverStanding {
@@ -42,18 +43,55 @@ const StandingsPage: React.FC = () => {
     
     try {
       if (activeTab === 'drivers') {
-        const response = await fetch(`http://localhost:8000/api/v1/driver-standings?year=${selectedYear}`);
-        if (!response.ok) throw new Error('Failed to fetch driver standings');
+        console.log('🔄 Fetching driver standings from:', API_ENDPOINTS.driverStandings(selectedYear));
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+        
+        const response = await fetch(API_ENDPOINTS.driverStandings(selectedYear), {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        clearTimeout(timeoutId);
+        console.log('📥 Driver standings response:', response.status, response.statusText);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch driver standings: ${response.status} ${response.statusText}`);
+        }
         const data = await response.json();
+        console.log('✅ Driver standings data:', data);
         setDriverStandings(data.data || []);
       } else {
-        const response = await fetch(`http://localhost:8000/api/v1/constructor-standings?year=${selectedYear}`);
-        if (!response.ok) throw new Error('Failed to fetch constructor standings');
+        console.log('🔄 Fetching constructor standings from:', API_ENDPOINTS.constructorStandings(selectedYear));
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+        
+        const response = await fetch(API_ENDPOINTS.constructorStandings(selectedYear), {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        clearTimeout(timeoutId);
+        console.log('📥 Constructor standings response:', response.status, response.statusText);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch constructor standings: ${response.status} ${response.statusText}`);
+        }
         const data = await response.json();
+        console.log('✅ Constructor standings data:', data);
         setConstructorStandings(data.data || []);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('❌ Standings fetch error:', err);
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Request timeout - Please check your connection and try again');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -56,9 +57,14 @@ const StandingsProgressionPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/standings-progression?year=${selectedYear}`);
-      if (!response.ok) throw new Error('Failed to fetch progression data');
+      console.log('🔄 Fetching progression data from:', API_ENDPOINTS.standingsProgression(selectedYear));
+      const response = await fetch(API_ENDPOINTS.standingsProgression(selectedYear));
+      console.log('📥 Progression response:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch progression data: ${response.status} ${response.statusText}`);
+      }
       const data = await response.json();
+      console.log('✅ Progression data:', data);
       setProgression(data.data);
       
       // 자동으로 상위 8명/팀 선택

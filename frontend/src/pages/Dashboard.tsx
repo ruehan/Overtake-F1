@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import websocketService from '../services/websocket';
 
 interface Driver {
   driver_number: number;
@@ -50,40 +51,40 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchInitialData();
     
-    // Set up WebSocket connection for live data
-    const ws = new WebSocket(API_ENDPOINTS.websocket);
-    
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-      ws.send('ping'); // Keep-alive
-    };
-    
-    ws.onmessage = (event) => {
+    // Set up Socket.IO connection for live data
+    const connectWebSocket = async () => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'live_timing') {
+        await websocketService.connect();
+        setIsConnected(true);
+        
+        // Listen for connection events
+        websocketService.on('connected', () => {
+          console.log('Socket.IO connected');
+          setIsConnected(true);
+        });
+        
+        websocketService.on('disconnect', () => {
+          console.log('Socket.IO disconnected');
+          setIsConnected(false);
+        });
+        
+        // Listen for live timing data
+        websocketService.on('live_timing', (data: any) => {
           setLiveTiming(data.data);
           setLastUpdate(new Date().toLocaleTimeString());
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        });
+        
+      } catch (error) {
+        console.error('Socket.IO connection error:', error);
+        setIsConnected(false);
       }
     };
     
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
-    };
+    connectWebSocket();
     
     // Clean up on unmount
     return () => {
-      ws.close();
+      websocketService.disconnect();
     };
   }, []);
 

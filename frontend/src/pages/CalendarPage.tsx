@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Race {
   round: number;
@@ -40,20 +41,20 @@ const CalendarPage: React.FC = () => {
     
     try {
       // Fetch calendar
-      const calendarResponse = await fetch(`http://localhost:8000/api/v1/calendar?year=${selectedYear}`);
+      const calendarResponse = await fetch(API_ENDPOINTS.calendar(selectedYear));
       if (!calendarResponse.ok) throw new Error('Failed to fetch calendar');
       const calendarData = await calendarResponse.json();
       setRaces(calendarData.data || []);
 
       // Fetch next race
-      const nextResponse = await fetch('http://localhost:8000/api/v1/calendar/next');
+      const nextResponse = await fetch(API_ENDPOINTS.nextRace);
       if (nextResponse.ok) {
         const nextData: NextRaceData = await nextResponse.json();
         setNextRace(nextData.data);
       }
 
       // Fetch current race
-      const currentResponse = await fetch('http://localhost:8000/api/v1/calendar/current');
+      const currentResponse = await fetch(API_ENDPOINTS.currentRace);
       if (currentResponse.ok) {
         const currentData: NextRaceData = await currentResponse.json();
         setCurrentRace(currentData.data);

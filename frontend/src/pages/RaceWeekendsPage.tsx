@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Session {
   session_type: string;
@@ -46,7 +47,7 @@ const RaceWeekendsPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/race-weekends?year=${selectedYear}`);
+      const response = await fetch(API_ENDPOINTS.raceWeekends(selectedYear));
       if (!response.ok) throw new Error('Failed to fetch race weekends');
       const data = await response.json();
       setWeekendsData(data.data);

@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import socketio
 
 # 환경 변수 로드
 load_dotenv()
@@ -22,12 +23,30 @@ from livef1.api import livetimingF1_request
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Socket.IO 서버 생성
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://overtake-f1.com", 
+        "https://www.overtake-f1.com",
+        "http://overtake-f1.com", 
+        "http://www.overtake-f1.com"
+    ],
+    ping_interval=25,
+    ping_timeout=60
+)
+
 # FastAPI 앱 생성
 app = FastAPI(
     title="F1 LiveTiming Dashboard",
     description="LiveF1 기반 실시간 F1 대시보드",
     version="2.0.0"
 )
+
+# Socket.IO ASGI 앱 마운트
+sio_app = socketio.ASGIApp(sio, app)
 
 # CORS 설정
 origins = os.getenv("CORS_ORIGINS", '["*"]')
@@ -1422,20 +1441,27 @@ async def get_status():
         "timestamp": datetime.now().isoformat()
     }
 
-# WebSocket 엔드포인트
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    livef1_service.websocket_connections.append(websocket)
-    logger.info(f"WebSocket connected. Total connections: {len(livef1_service.websocket_connections)}")
-    
-    try:
-        while True:
-            # 클라이언트에서 메시지 대기 (keep-alive)
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        livef1_service.websocket_connections.remove(websocket)
-        logger.info(f"WebSocket disconnected. Total connections: {len(livef1_service.websocket_connections)}")
+# Socket.IO 이벤트 핸들러
+@sio.event
+async def connect(sid, environ):
+    logger.info(f"Socket.IO client {sid} connected")
+    await sio.emit('connected', {'message': 'Connected to F1 Dashboard'}, to=sid)
+
+@sio.event
+async def disconnect(sid):
+    logger.info(f"Socket.IO client {sid} disconnected")
+
+@sio.event
+async def subscribe(sid, data):
+    topic = data.get('topic')
+    logger.info(f"Client {sid} subscribed to {topic}")
+    await sio.emit('subscribed', {'topic': topic}, to=sid)
+
+@sio.event
+async def unsubscribe(sid, data):
+    topic = data.get('topic')
+    logger.info(f"Client {sid} unsubscribed from {topic}")
+    await sio.emit('unsubscribed', {'topic': topic}, to=sid)
 
 # 실시간 데이터 브로드캐스트 태스크
 async def broadcast_live_data():
@@ -1464,4 +1490,4 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(sio_app, host="0.0.0.0", port=8000)

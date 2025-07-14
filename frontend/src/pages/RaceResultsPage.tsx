@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface DriverResult {
   position: number;
@@ -44,13 +45,13 @@ const RaceResultsPage: React.FC = () => {
     
     try {
       // Fetch all race results for the year
-      const response = await fetch(`http://localhost:8000/api/v1/race-results?year=${selectedYear}`);
+      const response = await fetch(API_ENDPOINTS.raceResults(selectedYear));
       if (!response.ok) throw new Error('Failed to fetch race results');
       const data = await response.json();
       setRaceResults(data.data || []);
 
       // Fetch latest completed race
-      const latestResponse = await fetch('http://localhost:8000/api/v1/race-results/latest');
+      const latestResponse = await fetch(API_ENDPOINTS.latestResult);
       if (latestResponse.ok) {
         const latestData = await latestResponse.json();
         setLatestRace(latestData.data);
