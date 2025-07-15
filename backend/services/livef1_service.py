@@ -573,6 +573,14 @@ class LiveF1Service:
         """사용 가능한 시즌 목록 반환"""
         return [2025, 2024, 2023]
     
+    async def get_seasons(self) -> List[int]:
+        """시즌 목록 가져오기 (get_available_seasons의 별칭)"""
+        return await self.get_available_seasons()
+    
+    async def get_calendar(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
+        """레이스 캘린더 가져오기 (get_race_calendar의 별칭)"""
+        return await self.get_race_calendar(year)
+    
     async def get_race_calendar(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
         """레이스 캘린더 가져오기"""
         try:
@@ -900,6 +908,17 @@ class LiveF1Service:
         except Exception as e:
             logger.error(f"Failed to get race weekend details: {e}")
             return {}
+    
+    async def get_race_weekends(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
+        """레이스 주말 일정 가져오기 (get_race_weekend_details의 별칭)"""
+        try:
+            result = await self.get_race_weekend_details(year)
+            if isinstance(result, dict) and 'race_weekends' in result:
+                return result['race_weekends']
+            return []
+        except Exception as e:
+            logger.error(f"Failed to get race weekends: {e}")
+            return []
 
     async def get_race_results(self, year: Optional[int] = None, round_number: Optional[int] = None) -> List[Dict[str, Any]]:
         """레이스 결과 가져오기 (페이지네이션 사용)"""
@@ -979,6 +998,28 @@ class LiveF1Service:
         except Exception as e:
             logger.error(f"Failed to get race results: {e}")
             return []
+    
+    async def get_latest_race_result(self) -> Optional[Dict[str, Any]]:
+        """최근 레이스 결과 가져오기"""
+        try:
+            # 현재 시즌 결과 가져오기
+            results = await self.get_race_results()
+            if not results:
+                return None
+            
+            # 결과가 있는 완료된 레이스 찾기
+            completed_races = [race for race in results if race.get('results')]
+            
+            if not completed_races:
+                return None
+            
+            # 가장 최근 완료된 레이스 반환
+            latest_race = completed_races[-1]
+            return latest_race
+            
+        except Exception as e:
+            logger.error(f"Failed to get latest race result: {e}")
+            return None
     
     async def get_driver_statistics(self, year: Optional[int] = None, driver_id: Optional[str] = None) -> Dict[str, Any]:
         """드라이버 통계 데이터 가져오기"""
@@ -1214,6 +1255,17 @@ class LiveF1Service:
         except Exception as e:
             logger.error(f"Failed to get career statistics for {driver_id}: {e}")
             return {}
+
+    async def get_circuits(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
+        """서킷 목록 가져오기 (routers/live_timing.py 호환성을 위한 메서드)"""
+        try:
+            circuit_info = await self.get_circuit_information(year)
+            if 'circuits' in circuit_info:
+                return circuit_info['circuits']
+            return []
+        except Exception as e:
+            logger.error(f"Failed to get circuits: {e}")
+            return []
 
     async def get_circuit_information(self, year: Optional[int] = None, circuit_id: Optional[str] = None) -> Dict[str, Any]:
         """서킷 정보 가져오기"""
@@ -1512,6 +1564,226 @@ class LiveF1Service:
                 logger.warning(f"LiveF1 API request failed for {endpoint}: {e}")
             return None
     
+    async def get_sessions_with_radio(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """라디오가 있는 세션 목록 가져오기"""
+        try:
+            # 현재는 임시로 일반 세션 목록을 반환
+            # 실제로는 OpenF1 API의 team_radio 엔드포인트에서 세션 정보를 가져와야 함
+            sessions = await self.get_sessions()
+            return sessions[:limit]
+        except Exception as e:
+            logger.error(f"Failed to get sessions with radio: {e}")
+            return []
+
+    async def get_sessions_with_weather(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """날씨 정보가 있는 세션 목록 가져오기"""
+        try:
+            # 현재는 임시로 일반 세션 목록을 반환
+            # 실제로는 OpenF1 API의 weather 엔드포인트에서 세션 정보를 가져와야 함
+            sessions = await self.get_sessions()
+            return sessions[:limit]
+        except Exception as e:
+            logger.error(f"Failed to get sessions with weather: {e}")
+            return []
+
+    async def get_team_radio(self, session_key: int, limit: int = 50) -> List[Dict[str, Any]]:
+        """팀 라디오 데이터 가져오기"""
+        try:
+            # OpenF1 API를 사용하여 팀 라디오 데이터 가져오기
+            url = f"https://api.openf1.org/v1/team_radio?session_key={session_key}&limit={limit}"
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                radio_data = response.json()
+                return radio_data
+            else:
+                logger.warning(f"Failed to fetch team radio data: HTTP {response.status_code}")
+                return []
+        except Exception as e:
+            logger.error(f"Failed to get team radio: {e}")
+            return []
+
+    async def get_team_radio_stats(self, session_key: int) -> Dict[str, Any]:
+        """팀 라디오 통계 가져오기"""
+        try:
+            radio_data = await self.get_team_radio(session_key, limit=1000)
+            
+            if not radio_data:
+                return {
+                    "total_messages": 0,
+                    "drivers_count": 0,
+                    "driver_stats": {},
+                    "session_key": session_key
+                }
+            
+            # 통계 계산
+            driver_stats = {}
+            for message in radio_data:
+                driver_number = message.get("driver_number")
+                if driver_number:
+                    if driver_number not in driver_stats:
+                        driver_stats[driver_number] = {
+                            "message_count": 0,
+                            "total_duration": 0
+                        }
+                    driver_stats[driver_number]["message_count"] += 1
+                    
+                    # 메시지 길이를 duration으로 추정 (임시)
+                    if "recording_url" in message:
+                        driver_stats[driver_number]["total_duration"] += 5  # 평균 5초로 추정
+            
+            return {
+                "total_messages": len(radio_data),
+                "drivers_count": len(driver_stats),
+                "driver_stats": driver_stats,
+                "session_key": session_key
+            }
+        except Exception as e:
+            logger.error(f"Failed to get team radio stats: {e}")
+            return {
+                "total_messages": 0,
+                "drivers_count": 0,
+                "driver_stats": {},
+                "session_key": session_key
+            }
+
+    async def get_weather_by_session(self, session_key: int) -> List[Dict[str, Any]]:
+        """세션별 날씨 데이터 가져오기"""
+        try:
+            # OpenF1 API를 사용하여 날씨 데이터 가져오기
+            url = f"https://api.openf1.org/v1/weather?session_key={session_key}"
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                weather_data = response.json()
+                return weather_data
+            else:
+                logger.warning(f"Failed to fetch weather data: HTTP {response.status_code}")
+                return []
+        except Exception as e:
+            logger.error(f"Failed to get weather by session: {e}")
+            return []
+
+    async def get_weather_analysis(self, session_key: int) -> Dict[str, Any]:
+        """날씨 분석 데이터 가져오기"""
+        try:
+            weather_data = await self.get_weather_by_session(session_key)
+            
+            if not weather_data:
+                return {
+                    "average_temperature": None,
+                    "temperature_range": {"min": None, "max": None},
+                    "average_humidity": None,
+                    "humidity_range": {"min": None, "max": None},
+                    "pressure_range": {"min": None, "max": None},
+                    "wind_speed_range": {"min": None, "max": None},
+                    "rainfall": False,
+                    "track_temperature_range": {"min": None, "max": None},
+                    "session_key": session_key
+                }
+            
+            # 날씨 분석 계산
+            temperatures = [w.get("air_temperature") for w in weather_data if w.get("air_temperature") is not None]
+            humidity = [w.get("humidity") for w in weather_data if w.get("humidity") is not None]
+            pressure = [w.get("pressure") for w in weather_data if w.get("pressure") is not None]
+            wind_speed = [w.get("wind_speed") for w in weather_data if w.get("wind_speed") is not None]
+            track_temp = [w.get("track_temperature") for w in weather_data if w.get("track_temperature") is not None]
+            rainfall = any(w.get("rainfall", False) for w in weather_data)
+            
+            return {
+                "average_temperature": sum(temperatures) / len(temperatures) if temperatures else None,
+                "temperature_range": {"min": min(temperatures), "max": max(temperatures)} if temperatures else {"min": None, "max": None},
+                "average_humidity": sum(humidity) / len(humidity) if humidity else None,
+                "humidity_range": {"min": min(humidity), "max": max(humidity)} if humidity else {"min": None, "max": None},
+                "pressure_range": {"min": min(pressure), "max": max(pressure)} if pressure else {"min": None, "max": None},
+                "wind_speed_range": {"min": min(wind_speed), "max": max(wind_speed)} if wind_speed else {"min": None, "max": None},
+                "rainfall": rainfall,
+                "track_temperature_range": {"min": min(track_temp), "max": max(track_temp)} if track_temp else {"min": None, "max": None},
+                "session_key": session_key
+            }
+        except Exception as e:
+            logger.error(f"Failed to get weather analysis: {e}")
+            return {
+                "average_temperature": None,
+                "temperature_range": {"min": None, "max": None},
+                "average_humidity": None,
+                "humidity_range": {"min": None, "max": None},
+                "pressure_range": {"min": None, "max": None},
+                "wind_speed_range": {"min": None, "max": None},
+                "rainfall": False,
+                "track_temperature_range": {"min": None, "max": None},
+                "session_key": session_key
+            }
+
+    async def get_tire_strategy(self, session_key: int) -> Dict[str, Any]:
+        """타이어 전략 분석 가져오기"""
+        try:
+            # OpenF1 API를 사용하여 스틴트 데이터 가져오기
+            url = f"https://api.openf1.org/v1/stints?session_key={session_key}"
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                stints_data = response.json()
+                
+                # 타이어 컴파운드별 사용 통계 계산
+                compound_stats = {}
+                driver_strategies = {}
+                
+                for stint in stints_data:
+                    compound = stint.get("compound")
+                    driver_number = stint.get("driver_number")
+                    lap_start = stint.get("lap_start", 0)
+                    lap_end = stint.get("lap_end", 0)
+                    stint_length = lap_end - lap_start + 1 if lap_end > lap_start else 0
+                    
+                    if compound:
+                        if compound not in compound_stats:
+                            compound_stats[compound] = {
+                                "usage_count": 0,
+                                "total_laps": 0,
+                                "average_stint_length": 0
+                            }
+                        compound_stats[compound]["usage_count"] += 1
+                        compound_stats[compound]["total_laps"] += stint_length
+                        
+                    if driver_number:
+                        if driver_number not in driver_strategies:
+                            driver_strategies[driver_number] = []
+                        driver_strategies[driver_number].append({
+                            "compound": compound,
+                            "lap_start": lap_start,
+                            "lap_end": lap_end,
+                            "stint_length": stint_length
+                        })
+                
+                # 평균 스틴트 길이 계산
+                for compound, stats in compound_stats.items():
+                    if stats["usage_count"] > 0:
+                        stats["average_stint_length"] = stats["total_laps"] / stats["usage_count"]
+                
+                return {
+                    "compound_statistics": compound_stats,
+                    "driver_strategies": driver_strategies,
+                    "total_stints": len(stints_data),
+                    "session_key": session_key
+                }
+            else:
+                logger.warning(f"Failed to fetch tire strategy data: HTTP {response.status_code}")
+                return {
+                    "compound_statistics": {},
+                    "driver_strategies": {},
+                    "total_stints": 0,
+                    "session_key": session_key
+                }
+        except Exception as e:
+            logger.error(f"Failed to get tire strategy: {e}")
+            return {
+                "compound_statistics": {},
+                "driver_strategies": {},
+                "total_stints": 0,
+                "session_key": session_key
+            }
+
     async def broadcast_to_websockets(self, data: Dict[str, Any]):
         if not self.websocket_connections:
             return

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface CircuitLocation {
   locality: string;
@@ -73,7 +74,7 @@ const CircuitsPage: React.FC = () => {
     setError(null);
     
     try {
-      let url = `http://localhost:8000/api/v1/circuits?year=${selectedYear}`;
+      let url = API_ENDPOINTS.circuits(selectedYear);
       if (selectedCircuit) {
         url += `&circuit_id=${selectedCircuit}`;
       }
@@ -81,7 +82,7 @@ const CircuitsPage: React.FC = () => {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch circuits data');
       const data = await response.json();
-      setCircuitsData(data.data);
+      setCircuitsData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {

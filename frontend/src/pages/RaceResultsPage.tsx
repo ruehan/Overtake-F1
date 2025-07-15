@@ -48,13 +48,13 @@ const RaceResultsPage: React.FC = () => {
       const response = await fetch(API_ENDPOINTS.raceResults(selectedYear));
       if (!response.ok) throw new Error('Failed to fetch race results');
       const data = await response.json();
-      setRaceResults(data.data || []);
+      setRaceResults(data.results || []);
 
       // Fetch latest completed race
       const latestResponse = await fetch(API_ENDPOINTS.latestResult);
       if (latestResponse.ok) {
         const latestData = await latestResponse.json();
-        setLatestRace(latestData.data);
+        setLatestRace(latestData.latest_result);
       }
 
     } catch (err) {

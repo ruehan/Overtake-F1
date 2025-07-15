@@ -44,20 +44,20 @@ const CalendarPage: React.FC = () => {
       const calendarResponse = await fetch(API_ENDPOINTS.calendar(selectedYear));
       if (!calendarResponse.ok) throw new Error('Failed to fetch calendar');
       const calendarData = await calendarResponse.json();
-      setRaces(calendarData.data || []);
+      setRaces(calendarData.calendar || []);
 
       // Fetch next race
       const nextResponse = await fetch(API_ENDPOINTS.nextRace);
       if (nextResponse.ok) {
-        const nextData: NextRaceData = await nextResponse.json();
-        setNextRace(nextData.data);
+        const nextData = await nextResponse.json();
+        setNextRace(nextData.next_race);
       }
 
       // Fetch current race
       const currentResponse = await fetch(API_ENDPOINTS.currentRace);
       if (currentResponse.ok) {
-        const currentData: NextRaceData = await currentResponse.json();
-        setCurrentRace(currentData.data);
+        const currentData = await currentResponse.json();
+        setCurrentRace(currentData.current_race);
       }
 
     } catch (err) {
