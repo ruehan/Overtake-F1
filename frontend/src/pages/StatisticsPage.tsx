@@ -3,35 +3,45 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
 
 interface DriverStat {
-  position: number;
-  driver_name: string;
-  driver_code: string;
-  team: string;
-  points: number;
-  wins: number;
-  podiums: number;
-  dnfs: number;
+  driver_number: number;
+  name: string;
+  slug: string;
+  season_wins: number;
+  season_podiums: number;
+  season_points: number;
+  races_entered: number;
+  best_finish: number | null;
+  average_finish: number;
   fastest_laps: number;
+  poles: number;
+  dnf: number;
+  championship_position: string | null;
+  team: string;
+  data_source: string;
 }
 
 interface TeamStat {
-  position: number;
-  team_name: string;
-  nationality: string;
-  points: number;
-  wins: number;
-  podiums: number;
-  dnfs: number;
-  fastest_laps: number;
-  one_twos: number;
+  team_slug: string;
+  name: string;
+  full_name: string;
+  season_wins: number;
+  season_podiums: number;
+  season_poles: number;
+  season_fastest_laps: number;
+  season_points: number;
+  season_races: number;
+  season_dnf: number;
+  championship_position: string | null;
+  drivers_count: string | null;
+  data_source: string;
 }
 
 interface StatisticsData {
-  drivers?: DriverStat[];
-  teams?: TeamStat[];
+  data?: DriverStat[] | TeamStat[];
   total_drivers?: number;
   total_teams?: number;
   year: number;
+  data_source?: string;
 }
 
 const StatisticsPage: React.FC = () => {
@@ -51,11 +61,26 @@ const StatisticsPage: React.FC = () => {
     setError(null);
     
     try {
-      const endpoint = viewType === 'drivers' ? 'driver-statistics' : 'team-statistics';
-      const response = await fetch(API_ENDPOINTS.statistics(selectedYear, viewType));
+      let response;
+      if (viewType === 'drivers') {
+        // 새로운 JSON 기반 API 사용 (2025년용)
+        if (selectedYear === 2025) {
+          response = await fetch(API_ENDPOINTS.allDriversSeasonStats(selectedYear));
+        } else {
+          response = await fetch(API_ENDPOINTS.statistics(selectedYear, viewType));
+        }
+      } else {
+        // 팀 통계는 새로운 JSON 기반 API 사용 (2025년용)
+        if (selectedYear === 2025) {
+          response = await fetch(API_ENDPOINTS.allTeamsSeasonStats(selectedYear));
+        } else {
+          response = await fetch(API_ENDPOINTS.statistics(selectedYear, viewType));
+        }
+      }
+      
       if (!response.ok) throw new Error('Failed to fetch statistics data');
       const data = await response.json();
-      setStatisticsData(data.data);
+      setStatisticsData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -73,13 +98,14 @@ const StatisticsPage: React.FC = () => {
   };
 
   const renderDriverStatistics = () => {
-    if (!statisticsData?.drivers) return null;
+    if (!statisticsData?.data || !Array.isArray(statisticsData.data)) return null;
 
-    const drivers = statisticsData.drivers;
-    const maxWins = Math.max(...drivers.map(d => d.wins));
-    const maxPodiums = Math.max(...drivers.map(d => d.podiums));
-    const maxDNFs = Math.max(...drivers.map(d => d.dnfs));
+    const drivers = statisticsData.data as DriverStat[];
+    const maxWins = Math.max(...drivers.map(d => d.season_wins));
+    const maxPodiums = Math.max(...drivers.map(d => d.season_podiums));
+    const maxDNFs = Math.max(...drivers.map(d => d.dnf));
     const maxFastestLaps = Math.max(...drivers.map(d => d.fastest_laps));
+    const maxPoles = Math.max(...drivers.map(d => d.poles));
 
     return (
       <div className="f1-card">
@@ -99,6 +125,7 @@ const StatisticsPage: React.FC = () => {
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>PTS</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>WINS</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>PODIUMS</th>
+                <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>POLES</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>FL</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>DNF</th>
               </tr>
@@ -106,7 +133,7 @@ const StatisticsPage: React.FC = () => {
             <tbody>
               {drivers.map((driver, index) => (
                 <tr 
-                  key={driver.driver_name}
+                  key={driver.name}
                   style={{ 
                     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                     backgroundColor: index % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent'
@@ -114,19 +141,19 @@ const StatisticsPage: React.FC = () => {
                 >
                   <td style={{ padding: '1rem 0.5rem', fontWeight: '600' }}>
                     <span style={{ 
-                      color: driver.position <= 3 ? '#ffd700' : '#fff',
-                      fontSize: driver.position <= 3 ? '1.1rem' : '1rem'
+                      color: index + 1 <= 3 ? '#ffd700' : '#fff',
+                      fontSize: index + 1 <= 3 ? '1.1rem' : '1rem'
                     }}>
-                      {driver.position}
+                      {driver.championship_position || (index + 1)}
                     </span>
                   </td>
                   <td style={{ padding: '1rem 0.5rem' }}>
                     <div>
                       <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                        {driver.driver_name}
+                        {driver.name}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                        {driver.driver_code}
+                        #{driver.driver_number}
                       </div>
                     </div>
                   </td>
@@ -139,23 +166,31 @@ const StatisticsPage: React.FC = () => {
                     fontWeight: '600',
                     color: '#10b981'
                   }}>
-                    {driver.points}
+                    {driver.season_points}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: driver.wins > 0 ? getStatColor(driver.wins, maxWins, 'good') : 'transparent',
+                    background: driver.season_wins > 0 ? getStatColor(driver.season_wins, maxWins, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {driver.wins}
+                    {driver.season_wins}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: driver.podiums > 0 ? getStatColor(driver.podiums, maxPodiums, 'good') : 'transparent',
+                    background: driver.season_podiums > 0 ? getStatColor(driver.season_podiums, maxPodiums, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {driver.podiums}
+                    {driver.season_podiums}
+                  </td>
+                  <td style={{ 
+                    padding: '1rem 0.5rem', 
+                    textAlign: 'center',
+                    background: driver.poles > 0 ? getStatColor(driver.poles, maxPoles, 'good') : 'transparent',
+                    borderRadius: '4px'
+                  }}>
+                    {driver.poles}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
@@ -168,10 +203,10 @@ const StatisticsPage: React.FC = () => {
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: driver.dnfs > 0 ? getStatColor(driver.dnfs, maxDNFs, 'bad') : 'transparent',
+                    background: driver.dnf > 0 ? getStatColor(driver.dnf, maxDNFs, 'bad') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {driver.dnfs}
+                    {driver.dnf}
                   </td>
                 </tr>
               ))}
@@ -183,14 +218,14 @@ const StatisticsPage: React.FC = () => {
   };
 
   const renderTeamStatistics = () => {
-    if (!statisticsData?.teams) return null;
+    if (!statisticsData?.data || !Array.isArray(statisticsData.data)) return null;
 
-    const teams = statisticsData.teams;
-    const maxWins = Math.max(...teams.map(t => t.wins));
-    const maxPodiums = Math.max(...teams.map(t => t.podiums));
-    const maxDNFs = Math.max(...teams.map(t => t.dnfs));
-    const maxFastestLaps = Math.max(...teams.map(t => t.fastest_laps));
-    const maxOneTwos = Math.max(...teams.map(t => t.one_twos));
+    const teams = statisticsData.data as TeamStat[];
+    const maxWins = Math.max(...teams.map(t => t.season_wins));
+    const maxPodiums = Math.max(...teams.map(t => t.season_podiums));
+    const maxDNFs = Math.max(...teams.map(t => t.season_dnf));
+    const maxFastestLaps = Math.max(...teams.map(t => t.season_fastest_laps));
+    const maxPoles = Math.max(...teams.map(t => t.season_poles));
 
     return (
       <div className="f1-card">
@@ -209,7 +244,7 @@ const StatisticsPage: React.FC = () => {
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>PTS</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>WINS</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>PODIUMS</th>
-                <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>1-2s</th>
+                <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>POLES</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>FL</th>
                 <th style={{ textAlign: 'center', padding: '1rem 0.5rem', color: '#ff6b35' }}>DNF</th>
               </tr>
@@ -217,7 +252,7 @@ const StatisticsPage: React.FC = () => {
             <tbody>
               {teams.map((team, index) => (
                 <tr 
-                  key={team.team_name}
+                  key={team.name}
                   style={{ 
                     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                     backgroundColor: index % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent'
@@ -225,19 +260,19 @@ const StatisticsPage: React.FC = () => {
                 >
                   <td style={{ padding: '1rem 0.5rem', fontWeight: '600' }}>
                     <span style={{ 
-                      color: team.position <= 3 ? '#ffd700' : '#fff',
-                      fontSize: team.position <= 3 ? '1.1rem' : '1rem'
+                      color: index + 1 <= 3 ? '#ffd700' : '#fff',
+                      fontSize: index + 1 <= 3 ? '1.1rem' : '1rem'
                     }}>
-                      {team.position}
+                      {team.championship_position || (index + 1)}
                     </span>
                   </td>
                   <td style={{ padding: '1rem 0.5rem' }}>
                     <div>
                       <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                        {team.team_name}
+                        {team.name}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                        {team.nationality}
+                        {team.drivers_count || 'N/A'}
                       </div>
                     </div>
                   </td>
@@ -247,47 +282,47 @@ const StatisticsPage: React.FC = () => {
                     fontWeight: '600',
                     color: '#10b981'
                   }}>
-                    {team.points}
+                    {team.season_points}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: team.wins > 0 ? getStatColor(team.wins, maxWins, 'good') : 'transparent',
+                    background: team.season_wins > 0 ? getStatColor(team.season_wins, maxWins, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {team.wins}
+                    {team.season_wins}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: team.podiums > 0 ? getStatColor(team.podiums, maxPodiums, 'good') : 'transparent',
+                    background: team.season_podiums > 0 ? getStatColor(team.season_podiums, maxPodiums, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {team.podiums}
+                    {team.season_podiums}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: team.one_twos > 0 ? getStatColor(team.one_twos, maxOneTwos, 'good') : 'transparent',
+                    background: team.season_poles > 0 ? getStatColor(team.season_poles, maxPoles, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {team.one_twos}
+                    {team.season_poles}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: team.fastest_laps > 0 ? getStatColor(team.fastest_laps, maxFastestLaps, 'good') : 'transparent',
+                    background: team.season_fastest_laps > 0 ? getStatColor(team.season_fastest_laps, maxFastestLaps, 'good') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {team.fastest_laps}
+                    {team.season_fastest_laps}
                   </td>
                   <td style={{ 
                     padding: '1rem 0.5rem', 
                     textAlign: 'center',
-                    background: team.dnfs > 0 ? getStatColor(team.dnfs, maxDNFs, 'bad') : 'transparent',
+                    background: team.season_dnf > 0 ? getStatColor(team.season_dnf, maxDNFs, 'bad') : 'transparent',
                     borderRadius: '4px'
                   }}>
-                    {team.dnfs}
+                    {team.season_dnf}
                   </td>
                 </tr>
               ))}
@@ -298,52 +333,6 @@ const StatisticsPage: React.FC = () => {
     );
   };
 
-  const renderSummaryCards = () => {
-    if (!statisticsData) return null;
-
-    let totalWins = 0;
-    let totalPodiums = 0;
-    let totalDNFs = 0;
-    let totalFastestLaps = 0;
-
-    if (viewType === 'drivers' && statisticsData.drivers) {
-      totalWins = statisticsData.drivers.reduce((sum: number, item: DriverStat) => sum + item.wins, 0);
-      totalPodiums = statisticsData.drivers.reduce((sum: number, item: DriverStat) => sum + item.podiums, 0);
-      totalDNFs = statisticsData.drivers.reduce((sum: number, item: DriverStat) => sum + item.dnfs, 0);
-      totalFastestLaps = statisticsData.drivers.reduce((sum: number, item: DriverStat) => sum + item.fastest_laps, 0);
-    } else if (viewType === 'teams' && statisticsData.teams) {
-      totalWins = statisticsData.teams.reduce((sum: number, item: TeamStat) => sum + item.wins, 0);
-      totalPodiums = statisticsData.teams.reduce((sum: number, item: TeamStat) => sum + item.podiums, 0);
-      totalDNFs = statisticsData.teams.reduce((sum: number, item: TeamStat) => sum + item.dnfs, 0);
-      totalFastestLaps = statisticsData.teams.reduce((sum: number, item: TeamStat) => sum + item.fastest_laps, 0);
-    }
-
-    const summaryStats = [
-      { label: t('statistics.totalWins'), value: totalWins, icon: '🏆', color: '#ffd700' },
-      { label: t('statistics.totalPodiums'), value: totalPodiums, icon: '🥇', color: '#10b981' },
-      { label: t('statistics.fastestLaps'), value: totalFastestLaps, icon: '⚡', color: '#3b82f6' },
-      { label: t('statistics.dnfs'), value: totalDNFs, icon: '❌', color: '#ef4444' }
-    ];
-
-    if (viewType === 'teams' && statisticsData.teams) {
-      const totalOneTwos = statisticsData.teams.reduce((sum: number, team: TeamStat) => sum + team.one_twos, 0);
-      summaryStats.splice(2, 0, { label: '1-2 Finishes', value: totalOneTwos, icon: '🥇🥈', color: '#f59e0b' });
-    }
-
-    return (
-      <div className="f1-grid f1-grid-5">
-        {summaryStats.map((stat, index) => (
-          <div key={index} className="f1-card" style={{ marginBottom: 0, textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{stat.icon}</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: stat.color, marginBottom: '0.25rem' }}>
-              {stat.value}
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#ccc' }}>{stat.label}</div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   if (loading) return <div className="f1-loading">{t('common.loading')} {t('statistics.title')}...</div>;
   if (error) return <div className="f1-error">{t('common.error')}: {error}</div>;
@@ -406,18 +395,18 @@ const StatisticsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      {renderSummaryCards()}
-
       {/* Statistics Table */}
       {viewType === 'drivers' ? renderDriverStatistics() : renderTeamStatistics()}
 
       {/* Legend */}
       <div className="f1-card">
         <h3 className="f1-card-title">📖 Legend</h3>
-        <div className="f1-grid f1-grid-4">
+        <div className="f1-grid f1-grid-5">
           <div style={{ fontSize: '0.9rem' }}>
             <span style={{ fontWeight: '600', color: '#ff6b35' }}>PTS:</span> Championship points
+          </div>
+          <div style={{ fontSize: '0.9rem' }}>
+            <span style={{ fontWeight: '600', color: '#ff6b35' }}>POLES:</span> Pole positions
           </div>
           <div style={{ fontSize: '0.9rem' }}>
             <span style={{ fontWeight: '600', color: '#ff6b35' }}>FL:</span> Fastest laps

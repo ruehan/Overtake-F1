@@ -70,6 +70,8 @@ export const API_ENDPOINTS = {
   
   // Statistics
   statistics: (year: number, type: string) => `${API_BASE_URL}/v1/${type === 'drivers' ? 'driver-statistics' : 'team-statistics'}?year=${year}`,
+  allDriversSeasonStats: (year: number) => `${API_BASE_URL}/v1/all-drivers/season-stats?year=${year}`,
+  allTeamsSeasonStats: (year: number) => `${API_BASE_URL}/v1/all-teams/season-stats?year=${year}`,
   standingsProgression: (year: number) => `${API_BASE_URL}/v1/standings-progression?year=${year}`,
   
   // Race weekends
