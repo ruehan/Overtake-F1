@@ -74,16 +74,10 @@ const DriverDetailModal: React.FC<DriverDetailModalProps> = ({ driverNumber, isO
     try {
       console.log('🔄 Fetching driver detail for driver number:', driverNumber);
       
-      // 기본 드라이버 정보, 시즌 통계, 경력 통계를 병렬로 가져오기
-      const [driverResponse, seasonStatsResponse, careerStatsResponse] = await Promise.all([
-        fetch(API_ENDPOINTS.driverDetail(driverNumber)),
-        fetch(API_ENDPOINTS.driverSeasonStats(driverNumber)),
-        fetch(API_ENDPOINTS.driverCareerStats(driverNumber))
-      ]);
+      // 통합 API로 모든 데이터를 한 번에 가져오기
+      const driverResponse = await fetch(API_ENDPOINTS.driverDetail(driverNumber));
       
       console.log('📥 Driver detail response:', driverResponse.status, driverResponse.statusText);
-      console.log('📥 Season stats response:', seasonStatsResponse.status, seasonStatsResponse.statusText);
-      console.log('📥 Career stats response:', careerStatsResponse.status, careerStatsResponse.statusText);
       
       if (!driverResponse.ok) {
         throw new Error(`Failed to fetch driver detail: ${driverResponse.status} ${driverResponse.statusText}`);
@@ -92,30 +86,8 @@ const DriverDetailModal: React.FC<DriverDetailModalProps> = ({ driverNumber, isO
       const driverData = await driverResponse.json();
       console.log('✅ Driver detail data:', driverData);
       
-      // 시즌 통계 데이터 가져오기
-      let seasonStats = { season_wins: 0, season_podiums: 0, season_points: 0 };
-      if (seasonStatsResponse.ok) {
-        const seasonData = await seasonStatsResponse.json();
-        seasonStats = seasonData.data;
-        console.log('✅ Season stats data:', seasonStats);
-      }
-      
-      // 경력 통계 데이터 가져오기
-      let careerStats = { race_wins: 0, podiums: 0, pole_positions: 0, fastest_laps: 0, career_points: 0, world_championships: 0, first_entry: null };
-      if (careerStatsResponse.ok) {
-        const careerData = await careerStatsResponse.json();
-        careerStats = careerData.data;
-        console.log('✅ Career stats data:', careerStats);
-      }
-      
-      // 드라이버 데이터에 시즌 통계와 경력 통계 병합
-      const combinedData = {
-        ...driverData.data,
-        ...seasonStats,
-        ...careerStats
-      };
-      
-      setDriver(combinedData);
+      // 통합된 데이터 설정
+      setDriver(driverData.driver);
     } catch (err) {
       console.error('❌ Driver detail fetch error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');

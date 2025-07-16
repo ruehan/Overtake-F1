@@ -1,0 +1,209 @@
+{
+  "scraped_at": "2025-07-15T23:39:10.518960",
+  "season": 2025,
+  "total_teams": 10,
+  "successful_scrapes": 10,
+  "failed_scrapes": 0,
+  "teams": {
+    "mclaren": {
+      "name": "McLaren",
+      "full_name": "McLaren Formula 1 Team",
+      "slug": "mclaren",
+      "scraped_at": "2025-07-15T23:39:17.242270",
+      "season_data": {
+        "season_wins": 9,
+        "season_podiums": 20,
+        "season_poles": 7,
+        "season_fastest_laps": 8,
+        "season_points": 460,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "1st",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/mclaren/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "ferrari-2": {
+      "name": "Ferrari",
+      "full_name": "Scuderia Ferrari",
+      "slug": "ferrari-2",
+      "scraped_at": "2025-07-15T23:39:25.296809",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 4,
+        "season_poles": 0,
+        "season_fastest_laps": 1,
+        "season_points": 222,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "2nd",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/ferrari-2/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "mercedes": {
+      "name": "Mercedes",
+      "full_name": "Mercedes-AMG Petronas Formula One Team",
+      "slug": "mercedes",
+      "scraped_at": "2025-07-15T23:39:33.314840",
+      "season_data": {
+        "season_wins": 1,
+        "season_podiums": 6,
+        "season_poles": 1,
+        "season_fastest_laps": 2,
+        "season_points": 210,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "3rd",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/mercedes/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "red-bull-racing": {
+      "name": "Red Bull",
+      "full_name": "Oracle Red Bull Racing",
+      "slug": "red-bull-racing",
+      "scraped_at": "2025-07-15T23:39:41.339951",
+      "season_data": {
+        "season_wins": 2,
+        "season_podiums": 5,
+        "season_poles": 4,
+        "season_fastest_laps": 1,
+        "season_points": 172,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "4th",
+        "season_drivers": "3 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/red-bull-racing/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "aston-martin": {
+      "name": "Aston Martin",
+      "full_name": "Aston Martin Aramco Formula One Team",
+      "slug": "aston-martin",
+      "scraped_at": "2025-07-15T23:39:49.189475",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 0,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 36,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "8th",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/aston-martin/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "alpine": {
+      "name": "Alpine",
+      "full_name": "BWT Alpine F1 Team",
+      "slug": "alpine",
+      "scraped_at": "2025-07-15T23:39:56.825484",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 0,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 19,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "10th",
+        "season_drivers": "3 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/alpine/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "williams": {
+      "name": "Williams",
+      "full_name": "Atlassian Williams Racing",
+      "slug": "williams",
+      "scraped_at": "2025-07-15T23:40:05.122998",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 0,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 59,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "5th",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/williams/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "haas": {
+      "name": "Haas",
+      "full_name": "MoneyGram Haas F1 Team",
+      "slug": "haas",
+      "scraped_at": "2025-07-15T23:40:13.248664",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 0,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 29,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "9th",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/haas/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "sauber": {
+      "name": "Kick Sauber",
+      "full_name": "Stake F1 Team Kick Sauber",
+      "slug": "sauber",
+      "scraped_at": "2025-07-15T23:40:21.242141",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 1,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 41,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "6th",
+        "season_drivers": "2 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/sauber/summary/series/fia-formula-one-world-championship",
+      "success": true
+    },
+    "visa-cash-app-rb-f1-team": {
+      "name": "RB",
+      "full_name": "Visa Cash App RB Formula One Team",
+      "slug": "visa-cash-app-rb-f1-team",
+      "scraped_at": "2025-07-15T23:40:28.981380",
+      "season_data": {
+        "season_wins": 0,
+        "season_podiums": 0,
+        "season_poles": 0,
+        "season_fastest_laps": 0,
+        "season_points": 0,
+        "season_races": 12,
+        "season_dnf": 0,
+        "season_championship_position": "",
+        "season_drivers": "3 Drivers"
+      },
+      "career_data": {},
+      "url": "https://motorsportstats.com/team/visa-cash-app-rb-f1-team/summary/series/fia-formula-one-world-championship",
+      "success": true
+    }
+  }
+}

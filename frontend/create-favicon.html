@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Favicon</title>
+</head>
+<body>
+    <canvas id="canvas" width="32" height="32" style="border: 1px solid black; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    <br><br>
+    <button onclick="downloadICO()">Download as ICO</button>
+    <button onclick="downloadPNG()">Download as PNG</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Draw red background
+        ctx.fillStyle = '#E10600';
+        ctx.fillRect(0, 0, 32, 32);
+        
+        // Draw white F
+        ctx.fillStyle = 'white';
+        // F horizontal lines
+        ctx.fillRect(4, 6, 10, 3);  // top
+        ctx.fillRect(4, 13, 8, 2);  // middle
+        // F vertical line
+        ctx.fillRect(4, 6, 3, 18);  // left side
+        
+        // Draw white 1
+        ctx.fillRect(18, 6, 3, 18); // main line
+        ctx.fillRect(15, 6, 6, 3);  // top
+        
+        // Racing stripe
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(2, 27, 28, 2);
+        
+        function downloadPNG() {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'favicon-32x32.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        function downloadICO() {
+            // For ICO, we'll download as PNG and you can convert manually
+            downloadPNG();
+            alert('Download PNG and convert to ICO manually, or replace the existing favicon.ico with this file renamed to favicon.ico');
+        }
+    </script>
+</body>
+</html>

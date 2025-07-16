@@ -65,11 +65,11 @@ const StandingsProgressionPage: React.FC = () => {
       }
       const data = await response.json();
       console.log('✅ Progression data:', data);
-      setProgression(data.data);
+      setProgression(data.progression);
       
       // 자동으로 상위 8명/팀 선택
-      if (data.data) {
-        const items = viewType === 'drivers' ? data.data.driver_progression : data.data.constructor_progression;
+      if (data.progression) {
+        const items = viewType === 'drivers' ? data.progression.driver_progression : data.progression.constructor_progression;
         const topItems = Object.keys(items).slice(0, 8);
         setSelectedItems(new Set(topItems));
       }

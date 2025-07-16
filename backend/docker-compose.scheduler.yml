@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  openf1-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: openf1-scheduler
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Seoul
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -101,35 +101,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onDriverClick }) => {
       const driversResponse = await fetch(API_ENDPOINTS.drivers);
       if (driversResponse.ok) {
         const driversData = await driversResponse.json();
-        setDrivers(driversData.data || []);
+        setDrivers(driversData.drivers || []);
       }
 
       // Fetch weather
       const weatherResponse = await fetch(API_ENDPOINTS.weather);
       if (weatherResponse.ok) {
         const weatherData = await weatherResponse.json();
-        setWeather(weatherData.data || {});
+        setWeather(weatherData.weather || {});
       }
 
       // Fetch next race
       const nextRaceResponse = await fetch(API_ENDPOINTS.nextRace);
       if (nextRaceResponse.ok) {
         const nextRaceData = await nextRaceResponse.json();
-        setNextRace(nextRaceData.data);
+        setNextRace(nextRaceData.next_race);
       }
 
       // Fetch current race
       const currentRaceResponse = await fetch(API_ENDPOINTS.currentRace);
       if (currentRaceResponse.ok) {
         const currentRaceData = await currentRaceResponse.json();
-        setCurrentRace(currentRaceData.data);
+        setCurrentRace(currentRaceData.current_race);
       }
 
       // Fetch initial live timing
       const timingResponse = await fetch(API_ENDPOINTS.liveTiming);
       if (timingResponse.ok) {
         const timingData = await timingResponse.json();
-        setLiveTiming(timingData.data || {});
+        setLiveTiming(timingData.timing || {});
       }
 
     } catch (err) {

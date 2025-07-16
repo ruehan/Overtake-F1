@@ -5,7 +5,6 @@ import StandingsPage from './pages/StandingsPage';
 import CalendarPage from './pages/CalendarPage';
 import RaceResultsPage from './pages/RaceResultsPage';
 import StandingsProgressionPage from './pages/StandingsProgressionPage';
-import RaceWeekendsPage from './pages/RaceWeekendsPage';
 import StatisticsPage from './pages/StatisticsPage';
 import CircuitsPage from './pages/CircuitsPage';
 import DriverDetailModal from './components/DriverDetailModal';
@@ -26,8 +25,6 @@ const AppContent = () => {
         return <StandingsPage onDriverClick={handleDriverClick} />;
       case 'progression':
         return <StandingsProgressionPage />;
-      case 'weekends':
-        return <RaceWeekendsPage />;
       case 'statistics':
         return <StatisticsPage />;
       case 'circuits':
@@ -96,13 +93,6 @@ const AppContent = () => {
           >
             <span className="nav-icon">📈</span>
             {t('nav.progression')}
-          </button>
-          <button 
-            className={currentPage === 'weekends' ? 'active' : ''}
-            onClick={() => handlePageChange('weekends')}
-          >
-            <span className="nav-icon">🏁</span>
-            {t('nav.weekends')}
           </button>
           <button 
             className={currentPage === 'statistics' ? 'active' : ''}

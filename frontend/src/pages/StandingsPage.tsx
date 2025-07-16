@@ -64,7 +64,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         }
         const data = await response.json();
         console.log('✅ Driver standings data:', data);
-        setDriverStandings(data.data || []);
+        setDriverStandings(data.standings || []);
       } else {
         console.log('🔄 Fetching constructor standings from:', API_ENDPOINTS.constructorStandings(selectedYear));
         const controller = new AbortController();
@@ -83,7 +83,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         }
         const data = await response.json();
         console.log('✅ Constructor standings data:', data);
-        setConstructorStandings(data.data || []);
+        setConstructorStandings(data.standings || []);
       }
     } catch (err) {
       console.error('❌ Standings fetch error:', err);

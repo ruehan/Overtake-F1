@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Background gradient
+        const gradient = ctx.createRadialGradient(256, 150, 50, 256, 256, 400);
+        gradient.addColorStop(0, '#FF1E00');
+        gradient.addColorStop(1, '#B30000');
+        
+        // Draw circle background
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(256, 256, 256, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw F1 text
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 200px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // F
+        ctx.font = 'bold 180px Arial';
+        ctx.fillText('F', 200, 256);
+        
+        // 1
+        ctx.font = 'bold 160px Arial';
+        ctx.fillText('1', 320, 256);
+        
+        // Racing stripes
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(50, 400, 412, 10);
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(80, 420, 352, 8);
+        
+        // Speed lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(400, 120);
+        ctx.lineTo(480, 120);
+        ctx.stroke();
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(420, 160);
+        ctx.lineTo(480, 160);
+        ctx.stroke();
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.moveTo(440, 200);
+        ctx.lineTo(480, 200);
+        ctx.stroke();
+        
+        // Convert to different sizes and download
+        function downloadCanvas(size, filename) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.drawImage(canvas, 0, 0, 512, 512, 0, 0, size, size);
+            
+            tempCanvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Generate different sizes
+        setTimeout(() => {
+            downloadCanvas(16, 'favicon-16x16.png');
+            setTimeout(() => downloadCanvas(32, 'favicon-32x32.png'), 500);
+            setTimeout(() => downloadCanvas(48, 'favicon-48x48.png'), 1000);
+            setTimeout(() => downloadCanvas(192, 'logo192.png'), 1500);
+            setTimeout(() => downloadCanvas(512, 'logo512.png'), 2000);
+        }, 1000);
+    </script>
+</body>
+</html>

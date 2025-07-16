@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 필요한 패키지 설치
+RUN pip install requests schedule
+
+# 스크립트 복사
+COPY fetch_openf1_data.py .
+COPY scheduler.py .
+
+# 데이터 디렉토리 생성
+RUN mkdir -p /app/data
+
+# 스케줄러 실행
+CMD ["python", "scheduler.py"]

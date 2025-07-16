@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenF1 Data Scheduler
+After=network.target
+
+[Service]
+Type=simple
+User=hangyu
+WorkingDirectory=/Users/hangyu/Desktop/Overtake/backend
+ExecStart=/usr/bin/python3 /Users/hangyu/Desktop/Overtake/backend/scheduler.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
