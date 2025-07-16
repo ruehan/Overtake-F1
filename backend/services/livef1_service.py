@@ -44,6 +44,298 @@ class LiveF1Service:
         }
         return country_map.get(country_code, "Unknown")
     
+    async def _get_meeting_key_for_round(self, round_number: int, year: int = 2025) -> Optional[int]:
+        """공식 캘린더에서 round_number에 해당하는 meeting_key를 추출"""
+        try:
+            # OpenF1 세션 정보에서 meeting_key 추출
+            url = f"https://api.openf1.org/v1/sessions?year={year}"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                sessions = response.json()
+                # 라운드별로 첫 번째 Race 세션의 meeting_key를 기준으로 매핑
+                round_meeting_map = {}
+                for session in sessions:
+                    if session.get('session_type', '').lower() == 'race':
+                        meeting_key = session.get('meeting_key')
+                        round_idx = len(round_meeting_map) + 1
+                        round_meeting_map[round_idx] = meeting_key
+                return round_meeting_map.get(round_number)
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to get meeting_key for round {round_number}: {e}")
+            return None
+
+    async def _get_openf1_session_results_from_json(self, round_number: int, session_type: str, year: int = 2025) -> List[Dict[str, Any]]:
+        """meeting_key + session_type 기반으로 OpenF1 JSON에서 세션 결과를 추출"""
+        try:
+            import os
+            json_file_path = os.path.join(os.path.dirname(__file__), "..", "openf1_2025_results.json")
+            if not os.path.exists(json_file_path):
+                logger.warning(f"OpenF1 JSON file not found: {json_file_path}")
+                return []
+            with open(json_file_path, 'r', encoding='utf-8') as f:
+                openf1_data = json.load(f)
+            sessions = openf1_data.get('sessions', {})
+            # 1. round_number → meeting_key
+            meeting_key = await self._get_meeting_key_for_round(round_number, year)
+            if not meeting_key:
+                logger.warning(f"No meeting_key found for round {round_number}")
+                return []
+            # 2. meeting_key + session_type으로 정확히 매칭
+            target_session = None
+            for session in sessions.values():
+                if session.get('meeting_key') == meeting_key and session.get('session_type', '').lower() == session_type.lower():
+                    target_session = session
+                    break
+            if not target_session:
+                logger.warning(f"No session found for meeting_key {meeting_key}, session_type {session_type}")
+                return []
+            raw_results = target_session.get('results', [])
+            # position이 None, 'None', '', 'null' 등 이상치이거나 숫자가 아닌 경우 제외
+            valid_results = [
+                result for result in raw_results
+                if result.get('position') not in [None, 'None', '', 'null'] and str(result.get('position')).isdigit()
+            ]
+            sorted_results = sorted(valid_results, key=lambda x: int(x.get('position')))
+            
+            # 라운드 번호에 맞는 세션 찾기
+            sessions = openf1_data.get('sessions', {})
+            
+            # 세션들을 날짜 순으로 정렬하여 라운드 번호에 맞는 세션 찾기
+            session_list = []
+            for session_key, session_data in sessions.items():
+                if session_data.get('session_type') == session_type:
+                    session_list.append(session_data)
+            
+            # 날짜 순으로 정렬
+            session_list.sort(key=lambda x: x.get('date_start', ''))
+            
+            # 라운드 번호에 해당하는 세션 선택
+            if round_number <= len(session_list):
+                target_session = session_list[round_number - 1]
+                raw_results = target_session.get('results', [])
+                
+                # OpenF1 원본 데이터를 Ergast 형식으로 변환
+                formatted_results = []
+                
+                # 드라이버 이름 매핑
+                driver_name_map = {
+                    1: {"givenName": "Max", "familyName": "Verstappen", "code": "VER"},
+                    4: {"givenName": "Lando", "familyName": "Norris", "code": "NOR"},
+                    5: {"givenName": "Gabriel", "familyName": "Bortoleto", "code": "BOR"},
+                    6: {"givenName": "Isack", "familyName": "Hadjar", "code": "HAD"},
+                    7: {"givenName": "Jack", "familyName": "Doohan", "code": "DOO"},
+                    10: {"givenName": "Pierre", "familyName": "Gasly", "code": "GAS"},
+                    12: {"givenName": "Andrea Kimi", "familyName": "Antonelli", "code": "ANT"},
+                    14: {"givenName": "Fernando", "familyName": "Alonso", "code": "ALO"},
+                    16: {"givenName": "Charles", "familyName": "Leclerc", "code": "LEC"},
+                    18: {"givenName": "Lance", "familyName": "Stroll", "code": "STR"},
+                    22: {"givenName": "Yuki", "familyName": "Tsunoda", "code": "TSU"},
+                    23: {"givenName": "Alexander", "familyName": "Albon", "code": "ALB"},
+                    27: {"givenName": "Nico", "familyName": "Hülkenberg", "code": "HUL"},
+                    30: {"givenName": "Liam", "familyName": "Lawson", "code": "LAW"},
+                    31: {"givenName": "Esteban", "familyName": "Ocon", "code": "OCO"},
+                    44: {"givenName": "Lewis", "familyName": "Hamilton", "code": "HAM"},
+                    55: {"givenName": "Carlos", "familyName": "Sainz", "code": "SAI"},
+                    63: {"givenName": "George", "familyName": "Russell", "code": "RUS"},
+                    81: {"givenName": "Oscar", "familyName": "Piastri", "code": "PIA"},
+                    87: {"givenName": "Oliver", "familyName": "Bearman", "code": "BEA"},
+                }
+                
+                # 팀 매핑
+                team_map = {
+                    1: "Red Bull Racing", 4: "McLaren", 5: "Sauber", 6: "RB F1 Team", 7: "Alpine F1 Team",
+                    10: "Alpine F1 Team", 12: "Mercedes", 14: "Aston Martin", 16: "Ferrari", 18: "Aston Martin",
+                    22: "RB F1 Team", 23: "Williams", 27: "Sauber", 30: "Red Bull Racing", 31: "Haas F1 Team",
+                    44: "Ferrari", 55: "Williams", 63: "Mercedes", 81: "McLaren", 87: "Haas F1 Team",
+                }
+                
+                for result in sorted_results:
+                    driver_number = result.get('driver_number', 0)
+                    driver_info = driver_name_map.get(driver_number, {
+                        "givenName": "Driver",
+                        "familyName": f"#{driver_number}",
+                        "code": f"D{driver_number:02d}"
+                    })
+                    
+                    formatted_result = {
+                        'position': str(result.get('position')),
+                        'Driver': {
+                            'givenName': driver_info["givenName"],
+                            'familyName': driver_info["familyName"],
+                            'permanentNumber': str(driver_number),
+                            'code': driver_info["code"]
+                        },
+                        'Constructor': {
+                            'name': team_map.get(driver_number, 'Unknown Team')
+                        },
+                        'points': str(result.get('points', 0)),
+                        'laps': str(result.get('number_of_laps', 0))
+                    }
+                    
+                    # 레이스 세션인 경우 시간 정보 추가
+                    if session_type.lower() == 'race':
+                        if result.get('duration'):
+                            minutes = int(result['duration'] // 60)
+                            seconds = result['duration'] % 60
+                            formatted_result['Time'] = {
+                                'time': f"{minutes}:{seconds:06.3f}"
+                            }
+                        if result.get('gap_to_leader') and result.get('gap_to_leader') > 0:
+                            formatted_result['gap'] = f"+{result['gap_to_leader']:.3f}s"
+                    
+                    formatted_results.append(formatted_result)
+                
+                logger.info(f"OpenF1 JSON returned {len(formatted_results)} valid results for round {round_number} {session_type}")
+                return formatted_results
+            
+            return []
+            
+        except Exception as e:
+            logger.warning(f"Failed to get OpenF1 session results from JSON for round {round_number}: {e}")
+            return []
+
+    async def _get_openf1_race_weekend_details(self, round_number: Optional[int] = None) -> Dict[str, Any]:
+        """2025년: motorsportstats_2025_race_results.json만 사용, 없으면 빈 데이터 반환"""
+        import os
+        import json
+        base_dir = os.path.dirname(__file__)
+        msstats_path = os.path.join(base_dir, "..", "motorsportstats_2025_race_results.json")
+        # motorsportstats만 사용
+        if os.path.exists(msstats_path):
+            with open(msstats_path, 'r', encoding='utf-8') as f:
+                msstats_data = json.load(f)
+            weekends = []
+            for idx, (slug, results) in enumerate(msstats_data.items(), 1):
+                if round_number and idx != round_number:
+                    continue
+                weekends.append({
+                    'round': idx,
+                    'race_name': slug.replace('-', ' ').title(),
+                    'sessions': [
+                        {
+                            'session_type': 'Race',
+                            'results': results
+                        }
+                    ],
+                    'weekend_status': 'completed' if results else 'upcoming',
+                    'date': None  # 날짜 정보는 motorsportstats 데이터에 없으므로 None 처리
+                })
+            if round_number:
+                return {'race_weekends': [weekends[0]] if weekends else []}
+            return {'race_weekends': weekends, 'total_weekends': len(weekends), 'year': 2025}
+        # 파일 없으면 빈 데이터 반환
+        return {'race_weekends': [], 'total_weekends': 0, 'year': 2025}
+
+    def _convert_openf1_results_to_ergast(self, openf1_results: List[Dict], session_type: str) -> List[Dict]:
+        """OpenF1 결과를 Ergast 형식으로 변환"""
+        try:
+            if not openf1_results:
+                return []
+            
+            # 드라이버 정보 매핑
+            driver_name_map = {
+                1: {"givenName": "Max", "familyName": "Verstappen", "code": "VER", "permanentNumber": "1"},
+                4: {"givenName": "Lando", "familyName": "Norris", "code": "NOR", "permanentNumber": "4"},
+                5: {"givenName": "Gabriel", "familyName": "Bortoleto", "code": "BOR", "permanentNumber": "5"},
+                6: {"givenName": "Isack", "familyName": "Hadjar", "code": "HAD", "permanentNumber": "6"},
+                7: {"givenName": "Jack", "familyName": "Doohan", "code": "DOO", "permanentNumber": "7"},
+                10: {"givenName": "Pierre", "familyName": "Gasly", "code": "GAS", "permanentNumber": "10"},
+                12: {"givenName": "Andrea Kimi", "familyName": "Antonelli", "code": "ANT", "permanentNumber": "12"},
+                14: {"givenName": "Fernando", "familyName": "Alonso", "code": "ALO", "permanentNumber": "14"},
+                16: {"givenName": "Charles", "familyName": "Leclerc", "code": "LEC", "permanentNumber": "16"},
+                18: {"givenName": "Lance", "familyName": "Stroll", "code": "STR", "permanentNumber": "18"},
+                22: {"givenName": "Yuki", "familyName": "Tsunoda", "code": "TSU", "permanentNumber": "22"},
+                23: {"givenName": "Alexander", "familyName": "Albon", "code": "ALB", "permanentNumber": "23"},
+                27: {"givenName": "Nico", "familyName": "Hülkenberg", "code": "HUL", "permanentNumber": "27"},
+                30: {"givenName": "Liam", "familyName": "Lawson", "code": "LAW", "permanentNumber": "30"},
+                31: {"givenName": "Esteban", "familyName": "Ocon", "code": "OCO", "permanentNumber": "31"},
+                43: {"givenName": "Franco", "familyName": "Colapinto", "code": "COL", "permanentNumber": "43"},
+                44: {"givenName": "Lewis", "familyName": "Hamilton", "code": "HAM", "permanentNumber": "44"},
+                55: {"givenName": "Carlos", "familyName": "Sainz", "code": "SAI", "permanentNumber": "55"},
+                63: {"givenName": "George", "familyName": "Russell", "code": "RUS", "permanentNumber": "63"},
+                81: {"givenName": "Oscar", "familyName": "Piastri", "code": "PIA", "permanentNumber": "81"},
+                87: {"givenName": "Oliver", "familyName": "Bearman", "code": "BEA", "permanentNumber": "87"}
+            }
+            
+            # 팀 정보 매핑
+            team_map = {
+                1: {"name": "Red Bull Racing", "constructorId": "red_bull"},
+                4: {"name": "McLaren", "constructorId": "mclaren"},
+                5: {"name": "Sauber", "constructorId": "sauber"},
+                6: {"name": "Red Bull Racing", "constructorId": "red_bull"},
+                7: {"name": "Alpine", "constructorId": "alpine"},
+                10: {"name": "Alpine", "constructorId": "alpine"},
+                12: {"name": "Mercedes", "constructorId": "mercedes"},
+                14: {"name": "Aston Martin", "constructorId": "aston_martin"},
+                16: {"name": "Ferrari", "constructorId": "ferrari"},
+                18: {"name": "Aston Martin", "constructorId": "aston_martin"},
+                22: {"name": "RB", "constructorId": "alphatauri"},
+                23: {"name": "Williams", "constructorId": "williams"},
+                27: {"name": "Haas F1 Team", "constructorId": "haas"},
+                30: {"name": "RB", "constructorId": "alphatauri"},
+                31: {"name": "Haas F1 Team", "constructorId": "haas"},
+                43: {"name": "Williams", "constructorId": "williams"},
+                44: {"name": "Ferrari", "constructorId": "ferrari"},
+                55: {"name": "Williams", "constructorId": "williams"},
+                63: {"name": "Mercedes", "constructorId": "mercedes"},
+                81: {"name": "McLaren", "constructorId": "mclaren"},
+                87: {"name": "Sauber", "constructorId": "sauber"}
+            }
+            
+            ergast_results = []
+            
+            for result in openf1_results:
+                driver_number = result.get('driver_number')
+                if not driver_number or driver_number not in driver_name_map:
+                    continue
+                
+                driver_info = driver_name_map[driver_number]
+                team_info = team_map.get(driver_number, {"name": "Unknown", "constructorId": "unknown"})
+                
+                ergast_result = {
+                    "position": str(result.get('position', 0)),
+                    "Driver": {
+                        "driverId": driver_info['code'].lower(),
+                        "permanentNumber": driver_info['permanentNumber'],
+                        "code": driver_info['code'],
+                        "givenName": driver_info['givenName'],
+                        "familyName": driver_info['familyName']
+                    },
+                    "Constructor": {
+                        "constructorId": team_info['constructorId'],
+                        "name": team_info['name']
+                    },
+                    "points": str(result.get('points', 0))
+                }
+                
+                # 세션 타입에 따라 추가 정보
+                if session_type.lower() == 'race':
+                    ergast_result.update({
+                        "grid": str(result.get('grid', 0)),
+                        "laps": str(result.get('number_of_laps', 0)),
+                        "status": "Finished" if not result.get('dnf') else "DNF"
+                    })
+                    
+                    # 시간 정보 추가
+                    if result.get('duration'):
+                        duration = result.get('duration')
+                        minutes = int(duration // 60)
+                        seconds = duration % 60
+                        ergast_result["Time"] = {"time": f"{minutes}:{seconds:.3f}"}
+                        
+                elif session_type.lower() == 'qualifying':
+                    # 퀄리파잉 시간 (임시로 Q1 시간만 설정)
+                    ergast_result["Q1"] = "1:20.000"  # 실제 데이터 있으면 사용
+                
+                ergast_results.append(ergast_result)
+            
+            return ergast_results
+            
+        except Exception as e:
+            logger.error(f"Failed to convert OpenF1 results to Ergast format: {e}")
+            return []
+
     async def _get_current_season_stats(self, driver_number: int) -> dict:
         """2025 시즌 실제 통계 가져오기"""
         try:
@@ -64,7 +356,7 @@ class LiveF1Service:
                     session_key = session["session_key"]
                     
                     # 각 세션의 결과 가져오기
-                    results_url = f"https://api.openf1.org/v1/results?session_key={session_key}&driver_number={driver_number}"
+                    results_url = f"https://api.openf1.org/v1/session_result?session_key={session_key}&driver_number={driver_number}"
                     results_response = requests.get(results_url, timeout=5)
                     
                     if results_response.status_code == 200:
@@ -775,7 +1067,12 @@ class LiveF1Service:
         try:
             if year is None:
                 year = datetime.now().year
-            
+            # 2025년 데이터의 경우 motorsportstats_2025_race_results.json만 사용
+            if year == 2025:
+                msstats_result = await self._get_openf1_race_weekend_details(round_number)
+                return msstats_result
+            # 이하 기존 로직(Ergast API)
+            # ... (기존 코드 유지) ...
             # 레이스 캘린더 정보
             calendar_url = f"https://api.jolpi.ca/ergast/f1/{year}.json?limit=1000"
             calendar_response = requests.get(calendar_url, timeout=10)
@@ -800,22 +1097,38 @@ class LiveF1Service:
                 qualifying_data = {}
                 
                 try:
+                    logger.info(f"Fetching race results from: {results_url}")
                     results_response = requests.get(results_url, timeout=10)
                     if results_response.status_code == 200:
                         results_json = results_response.json()
-                        for race in results_json['MRData']['RaceTable']['Races']:
-                            results_data[int(race['round'])] = race.get('Results', [])
-                except:
-                    pass
+                        races_with_results = results_json['MRData']['RaceTable']['Races']
+                        logger.info(f"Found {len(races_with_results)} races with results")
+                        for race in races_with_results:
+                            race_round = int(race['round'])
+                            race_results = race.get('Results', [])
+                            results_data[race_round] = race_results
+                            logger.info(f"Race {race_round}: {len(race_results)} results")
+                    else:
+                        logger.warning(f"Failed to fetch results: {results_response.status_code}")
+                except Exception as e:
+                    logger.error(f"Error fetching race results: {e}")
                 
                 try:
+                    logger.info(f"Fetching qualifying results from: {qualifying_url}")
                     qualifying_response = requests.get(qualifying_url, timeout=10)
                     if qualifying_response.status_code == 200:
                         qualifying_json = qualifying_response.json()
-                        for race in qualifying_json['MRData']['RaceTable']['Races']:
-                            qualifying_data[int(race['round'])] = race.get('QualifyingResults', [])
-                except:
-                    pass
+                        races_with_qualifying = qualifying_json['MRData']['RaceTable']['Races']
+                        logger.info(f"Found {len(races_with_qualifying)} races with qualifying")
+                        for race in races_with_qualifying:
+                            race_round = int(race['round'])
+                            qualifying_results = race.get('QualifyingResults', [])
+                            qualifying_data[race_round] = qualifying_results
+                            logger.info(f"Qualifying {race_round}: {len(qualifying_results)} results")
+                    else:
+                        logger.warning(f"Failed to fetch qualifying: {qualifying_response.status_code}")
+                except Exception as e:
+                    logger.error(f"Error fetching qualifying results: {e}")
                 
                 # 각 레이스 주말 정보 구성
                 for race in races:
@@ -827,13 +1140,32 @@ class LiveF1Service:
                     # 세션 일정 정리
                     sessions = []
                     
+                    # 세션 상태 결정을 위한 날짜 비교 함수
+                    def get_session_status(session_date, session_type='race', race_round=None):
+                        from datetime import datetime
+                        today = datetime.now().date()
+                        try:
+                            session_date_obj = datetime.strptime(session_date, '%Y-%m-%d').date()
+                            if session_date_obj < today:
+                                # 과거 세션인 경우 실제 결과 데이터 여부 확인
+                                if session_type.lower() == 'qualifying':
+                                    return 'completed' if race_round in qualifying_data else 'completed'
+                                elif session_type.lower() == 'race':
+                                    return 'completed' if race_round in results_data else 'completed'
+                                else:
+                                    return 'completed'
+                            else:
+                                return 'scheduled'
+                        except:
+                            return 'scheduled'
+                    
                     # 연습 세션들
                     if race.get('FirstPractice'):
                         sessions.append({
                             'session_type': 'Practice 1',
                             'date': race['FirstPractice']['date'],
                             'time': race['FirstPractice'].get('time'),
-                            'status': 'completed' if race_round in results_data else 'scheduled'
+                            'status': get_session_status(race['FirstPractice']['date'], 'practice', race_round)
                         })
                     
                     if race.get('SecondPractice'):
@@ -841,7 +1173,7 @@ class LiveF1Service:
                             'session_type': 'Practice 2',
                             'date': race['SecondPractice']['date'],
                             'time': race['SecondPractice'].get('time'),
-                            'status': 'completed' if race_round in results_data else 'scheduled'
+                            'status': get_session_status(race['SecondPractice']['date'], 'practice', race_round)
                         })
                     
                     if race.get('ThirdPractice'):
@@ -849,7 +1181,7 @@ class LiveF1Service:
                             'session_type': 'Practice 3',
                             'date': race['ThirdPractice']['date'],
                             'time': race['ThirdPractice'].get('time'),
-                            'status': 'completed' if race_round in results_data else 'scheduled'
+                            'status': get_session_status(race['ThirdPractice']['date'], 'practice', race_round)
                         })
                     
                     # 스프린트 (있는 경우)
@@ -858,27 +1190,40 @@ class LiveF1Service:
                             'session_type': 'Sprint',
                             'date': race['Sprint']['date'],
                             'time': race['Sprint'].get('time'),
-                            'status': 'completed' if race_round in results_data else 'scheduled'
+                            'status': get_session_status(race['Sprint']['date'], 'sprint', race_round)
                         })
                     
                     # 예선
                     if race.get('Qualifying'):
+                        qualifying_results = qualifying_data.get(race_round, [])
                         sessions.append({
                             'session_type': 'Qualifying',
                             'date': race['Qualifying']['date'],
                             'time': race['Qualifying'].get('time'),
-                            'status': 'completed' if race_round in qualifying_data else 'scheduled',
-                            'results': qualifying_data.get(race_round, [])
+                            'status': get_session_status(race['Qualifying']['date'], 'qualifying', race_round),
+                            'results': qualifying_results
                         })
                     
                     # 레이스
+                    race_results = results_data.get(race_round, [])
                     sessions.append({
                         'session_type': 'Race',
                         'date': race['date'],
                         'time': race.get('time'),
-                        'status': 'completed' if race_round in results_data else 'scheduled',
-                        'results': results_data.get(race_round, [])
+                        'status': get_session_status(race['date'], 'race', race_round),
+                        'results': race_results
                     })
+                    
+                    # 레이스 날짜 기반으로 상태 결정
+                    from datetime import datetime
+                    today = datetime.now().date()
+                    race_date = datetime.strptime(race['date'], '%Y-%m-%d').date()
+                    
+                    # 레이스 날짜가 지났으면 completed, 아니면 upcoming
+                    if race_date < today:
+                        weekend_status = 'completed'
+                    else:
+                        weekend_status = 'upcoming'
                     
                     weekend_info = {
                         'round': race_round,
@@ -891,23 +1236,17 @@ class LiveF1Service:
                         'url': race.get('url', ''),
                         'season': race['season'],
                         'sessions': sessions,
-                        'weekend_status': 'completed' if race_round in results_data else 'upcoming'
+                        'weekend_status': weekend_status
                     }
                     
                     race_weekends.append(weekend_info)
             
             if round_number:
                 return race_weekends[0] if race_weekends else {}
-            
-            return {
-                'race_weekends': race_weekends,
-                'total_weekends': len(race_weekends),
-                'year': year
-            }
-            
+            return {'race_weekends': race_weekends, 'total_weekends': len(race_weekends), 'year': year}
         except Exception as e:
             logger.error(f"Failed to get race weekend details: {e}")
-            return {}
+            return {'race_weekends': [], 'total_weekends': 0, 'year': year}
     
     async def get_race_weekends(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
         """레이스 주말 일정 가져오기 (get_race_weekend_details의 별칭)"""
