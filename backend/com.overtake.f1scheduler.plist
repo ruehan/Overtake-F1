@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.overtake.f1scheduler</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/hangyu/Desktop/Overtake/backend/venv/bin/python3</string>
+        <string>/Users/hangyu/Desktop/Overtake/backend/weekly_scraper.py</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/hangyu/Desktop/Overtake/backend</string>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/hangyu/Desktop/Overtake/backend/weekly_scraper.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/hangyu/Desktop/Overtake/backend/weekly_scraper.log</string>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>2</integer>  <!-- 월요일 (1=일요일, 2=월요일, ..., 7=토요일) -->
+        <key>Hour</key>
+        <integer>10</integer>  <!-- 오전 10시 -->
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>KeepAlive</key>
+    <false/>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/hangyu/Desktop/Overtake/backend/venv/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>PYTHONPATH</key>
+        <string>/Users/hangyu/Desktop/Overtake/backend</string>
+    </dict>
+</dict>
+</plist> 

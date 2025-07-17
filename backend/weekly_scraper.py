@@ -37,6 +37,7 @@ def run_weekly_scraper():
         venv_python = script_dir / "venv" / "bin" / "python3"
         
         # 스크래핑 스크립트들
+        motorsportstats_scraper = script_dir / "motorsportstats_race_batch_scraper.py"
         driver_scraper = script_dir / "bulk_driver_scraper.py"
         team_scraper = script_dir / "team_season_scraper.py"
         openf1_scraper = script_dir / "fetch_openf1_data.py"
@@ -46,8 +47,21 @@ def run_weekly_scraper():
             logger.error(f"Virtual environment Python not found at: {venv_python}")
             return False
         
-        # 드라이버 스크래핑 실행
-        logger.info("1. Starting driver statistics scraping...")
+        # 1. MotorsportStats 레이스 결과 스크래핑 (우선순위 1 - 2025년 현재 데이터)
+        logger.info("1. Starting MotorsportStats race results scraping...")
+        if not motorsportstats_scraper.exists():
+            logger.error(f"MotorsportStats scraper script not found at: {motorsportstats_scraper}")
+            return False
+        
+        motorsportstats_result = subprocess.run(
+            [str(venv_python), str(motorsportstats_scraper)],
+            capture_output=True,
+            text=True,
+            timeout=1800  # 30분 타임아웃
+        )
+        
+        # 2. 드라이버 스크래핑 실행
+        logger.info("2. Starting driver statistics scraping...")
         if not driver_scraper.exists():
             logger.error(f"Driver scraper script not found at: {driver_scraper}")
             return False
@@ -59,8 +73,8 @@ def run_weekly_scraper():
             timeout=3600  # 1시간 타임아웃
         )
         
-        # 팀 스크래핑 실행
-        logger.info("2. Starting team statistics scraping...")
+        # 3. 팀 스크래핑 실행
+        logger.info("3. Starting team statistics scraping...")
         if not team_scraper.exists():
             logger.error(f"Team scraper script not found at: {team_scraper}")
             return False
@@ -72,8 +86,8 @@ def run_weekly_scraper():
             timeout=1800  # 30분 타임아웃
         )
         
-        # OpenF1 데이터 스크래핑 실행
-        logger.info("3. Starting OpenF1 data scraping...")
+        # 4. OpenF1 데이터 스크래핑 실행 (백업용)
+        logger.info("4. Starting OpenF1 data scraping...")
         if not openf1_scraper.exists():
             logger.error(f"OpenF1 scraper script not found at: {openf1_scraper}")
             return False
@@ -86,9 +100,17 @@ def run_weekly_scraper():
         )
         
         # 결과 확인
+        motorsportstats_success = motorsportstats_result.returncode == 0
         driver_success = driver_result.returncode == 0
         team_success = team_result.returncode == 0
         openf1_success = openf1_result.returncode == 0
+        
+        if motorsportstats_success:
+            logger.info("✅ MotorsportStats race results scraping completed successfully!")
+            logger.info(f"MotorsportStats output: {motorsportstats_result.stdout}")
+        else:
+            logger.error(f"❌ MotorsportStats scraping failed with return code: {motorsportstats_result.returncode}")
+            logger.error(f"MotorsportStats error: {motorsportstats_result.stderr}")
         
         if driver_success:
             logger.info("✅ Driver scraping completed successfully!")
@@ -111,9 +133,10 @@ def run_weekly_scraper():
             logger.error(f"❌ OpenF1 scraping failed with return code: {openf1_result.returncode}")
             logger.error(f"OpenF1 error: {openf1_result.stderr}")
         
-        if driver_success and team_success and openf1_success:
+        if motorsportstats_success and driver_success and team_success and openf1_success:
             # JSON 파일들 생성 확인 및 백업
             files_to_check = [
+                ("motorsportstats_2025_race_results.json", "motorsportstats_race_backup"),
                 ("driver_career_stats.json", "driver_career_stats_backup"),
                 ("team_2025_season_stats.json", "team_2025_season_backup"),
                 ("openf1_2025_results.json", "openf1_2025_results_backup")
@@ -147,7 +170,7 @@ def run_weekly_scraper():
             # 오래된 백업 파일 정리 (30일 이상)
             cleanup_old_backups(script_dir / "backups", days=30)
             
-            return success_count == 3  # 세 파일 모두 성공해야 True
+            return success_count == 4  # 네 파일 모두 성공해야 True
         else:
             logger.error("❌ One or more scraping tasks failed")
             return False
@@ -163,6 +186,13 @@ def cleanup_old_backups(backup_dir, days=30):
     """오래된 백업 파일 정리"""
     try:
         cutoff_date = datetime.now() - timedelta(days=days)
+        
+        # MotorsportStats 백업 파일 정리
+        for backup_file in backup_dir.glob("motorsportstats_race_backup_*.json"):
+            file_mtime = datetime.fromtimestamp(backup_file.stat().st_mtime)
+            if file_mtime < cutoff_date:
+                backup_file.unlink()
+                logger.info(f"🗑️ Deleted old MotorsportStats backup: {backup_file}")
         
         # 드라이버 백업 파일 정리
         for backup_file in backup_dir.glob("driver_career_stats_backup_*.json"):
@@ -213,7 +243,7 @@ def main():
             success = run_weekly_scraper()
             
             if success:
-                message = f"Driver, team and OpenF1 statistics updated successfully on {today.strftime('%Y-%m-%d')}"
+                message = f"MotorsportStats race results, driver, team and OpenF1 statistics updated successfully on {today.strftime('%Y-%m-%d')}"
                 send_notification(True, message)
                 logger.info("=== Weekly F1 statistics scraping completed successfully ===")
             else:
