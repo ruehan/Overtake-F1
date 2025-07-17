@@ -16,13 +16,13 @@ body {
   letter-spacing: 0.3px;
 }
 
-.f1-app {
+.app {
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
 }
 
-/* Navigation */
-.f1-nav {
+/* Header */
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -36,7 +36,7 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-.f1-nav-brand h1 {
+.header-left .logo {
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
   font-size: 2rem;
   font-weight: 700;
@@ -47,142 +47,173 @@ body {
   text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
   letter-spacing: 3px;
   text-transform: uppercase;
-}
-
-.f1-nav-links {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-}
-
-.f1-nav-lang {
-  display: flex;
-  align-items: center;
-}
-
-/* Mobile Menu Toggle */
-.f1-nav-toggle {
-  display: none;
-  flex-direction: column;
-  justify-content: space-around;
-  width: 2rem;
-  height: 2rem;
-  background: transparent;
-  border: none;
   cursor: pointer;
-  padding: 0;
-  z-index: 10;
+  transition: all 0.3s ease;
 }
 
-.f1-nav-toggle span {
-  width: 2rem;
-  height: 0.25rem;
-  background: #fff;
-  border-radius: 10px;
-  transition: all 0.3s linear;
-  position: relative;
-  transform-origin: 1px;
+.header-left .logo:hover {
+  transform: scale(1.05);
 }
 
-.f1-nav-toggle span:first-child {
-  transform: rotate(0);
+/* Desktop Navigation */
+.desktop-nav {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.f1-nav-toggle span:nth-child(2) {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.f1-nav-toggle span:nth-child(3) {
-  transform: rotate(0);
-}
-
-.f1-nav-links button {
-  font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+.desktop-nav button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   color: #fff;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-radius: 25px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
 }
 
-.f1-nav-links button::before {
+.desktop-nav button::before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, #ff6b35, #f7931e);
-  transition: left 0.3s ease;
-  z-index: -1;
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
-.f1-nav-links button:hover::before {
-  left: 0;
+.desktop-nav button:hover::before {
+  left: 100%;
 }
 
-.f1-nav-links button:hover {
-  border-color: #ff6b35;
+.desktop-nav button:hover {
+  border-color: rgba(255, 107, 53, 0.6);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
 }
 
-.f1-nav-links button.active {
-  background: linear-gradient(45deg, #ff6b35, #f7931e);
-  border-color: #ff6b35;
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
-  transform: translateY(-1px);
+.desktop-nav button.active {
+  background: linear-gradient(45deg, rgba(255, 107, 53, 0.2), rgba(247, 147, 30, 0.2));
+  border-color: rgba(255, 107, 53, 0.8);
+  color: #ff6b35;
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
 }
 
-.f1-nav-links button .nav-icon {
-  font-size: 1rem;
+/* Header Right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 /* Language Toggle */
-.f1-lang-toggle {
-  font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.language-toggle {
+  position: relative;
+}
+
+.language-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.3);
   color: #fff;
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
   cursor: pointer;
-  border-radius: 25px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  outline: none;
   transition: all 0.3s ease;
-  display: flex;
+}
+
+.language-select:hover {
+  border-color: rgba(255, 107, 53, 0.6);
+  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+}
+
+.language-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: #fff;
+  padding: 0.8rem;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+  border-color: rgba(255, 107, 53, 0.6);
+  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 999;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
+  gap: 2rem;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
 }
 
-.f1-lang-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+.mobile-menu.open {
+  display: flex;
+  transform: translateX(0);
 }
 
-.lang-flag {
-  font-size: 1rem;
+.mobile-menu button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  text-align: center;
+}
+
+.mobile-menu button:hover,
+.mobile-menu button.active {
+  background: linear-gradient(45deg, rgba(255, 107, 53, 0.2), rgba(247, 147, 30, 0.2));
+  border-color: rgba(255, 107, 53, 0.8);
+  color: #ff6b35;
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
 }
 
 /* Main Content */
-.f1-main {
+.main-content {
+  min-height: calc(100vh - 80px);
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 /* Common Card Styles */

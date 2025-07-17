@@ -14,7 +14,7 @@ load_dotenv()
 
 # 서비스 및 라우터 import
 from services.livef1_service import LiveF1Service
-from routers import drivers, statistics, races, live_timing
+from routers import drivers, statistics, races, live_timing, teams, users
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -81,12 +81,16 @@ drivers.init_service(livef1_service)
 statistics.init_service(livef1_service)
 races.init_service(livef1_service)
 live_timing.init_service(livef1_service)
+teams.init_service(livef1_service)
+users.init_service(livef1_service)
 
 # 라우터 등록
 app.include_router(drivers.router)
 app.include_router(statistics.router)
 app.include_router(races.router)
 app.include_router(live_timing.router)
+app.include_router(teams.router)
+app.include_router(users.router)
 
 # 기본 엔드포인트
 @app.get("/")

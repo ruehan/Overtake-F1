@@ -54,7 +54,11 @@ export const API_ENDPOINTS = {
   driverDetail: (driverNumber: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}`,
   driverSeasonStats: (driverNumber: number, year?: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}/season-stats${year ? `?year=${year}` : ''}`,
   driverCareerStats: (driverNumber: number) => `${API_BASE_URL}/v1/drivers/${driverNumber}/career-stats`,
-  driverStandings: (year: number) => `${API_BASE_URL}/v1/driver-standings?year=${year}`,
+  driverStandings: `${API_BASE_URL}/v1/all-drivers/season-stats`,
+  
+  // Team endpoints
+  teams: `${API_BASE_URL}/v1/teams`,
+  teamStandings: `${API_BASE_URL}/v1/all-teams/season-stats`,
   
   // Constructor endpoints
   constructorStandings: (year: number) => `${API_BASE_URL}/v1/constructor-standings?year=${year}`,
@@ -90,6 +94,9 @@ export const API_ENDPOINTS = {
   weatherBySession: (sessionKey: number) => `${API_BASE_URL}/v1/weather?session_key=${sessionKey}`,
   weatherAnalysis: (sessionKey: number) => `${API_BASE_URL}/v1/weather/analysis?session_key=${sessionKey}`,
   tireStrategy: (sessionKey: number) => `${API_BASE_URL}/v1/weather/tire-strategy?session_key=${sessionKey}`,
+  
+  // User preferences endpoints
+  users: `${API_BASE_URL}/v1/users`,
   
   // WebSocket (Socket.IO)
   websocket: WS_BASE_URL

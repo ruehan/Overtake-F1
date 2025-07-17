@@ -2139,3 +2139,214 @@ class LiveF1Service:
         # 연결이 끊어진 WebSocket 제거
         for ws in disconnected:
             self.websocket_connections.remove(ws)
+
+    async def calculate_season_driver_stats(self, year: int = 2025) -> List[Dict[str, Any]]:
+        """motorsportstats_2025_race_results.json을 기반으로 드라이버별 시즌 통계 계산"""
+        try:
+            import os
+            base_dir = os.path.dirname(__file__)
+            msstats_path = os.path.join(base_dir, "..", "motorsportstats_2025_race_results.json")
+            
+            if not os.path.exists(msstats_path):
+                logger.warning("motorsportstats_2025_race_results.json not found")
+                return []
+            
+            with open(msstats_path, 'r', encoding='utf-8') as f:
+                msstats_data = json.load(f)
+            
+            # 드라이버별 통계 초기화
+            driver_stats = {}
+            
+            # F1 포인트 시스템 (1위부터 10위까지)
+            points_system = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
+            
+            for gp_slug, results in msstats_data.items():
+                for result in results:
+                    driver_name = result.get('DRIVER', '')
+                    team_name = result.get('TEAM', '')
+                    position_str = result.get('POS', '0')
+                    
+                    # 포지션을 숫자로 변환
+                    try:
+                        position = int(position_str)
+                    except (ValueError, TypeError):
+                        continue  # 유효하지 않은 포지션은 건너뛰기
+                    
+                    if driver_name not in driver_stats:
+                        driver_stats[driver_name] = {
+                            'name': driver_name,
+                            'team': team_name,
+                            'season_points': 0,
+                            'season_wins': 0,
+                            'season_podiums': 0,
+                            'races_entered': 0,
+                            'best_finish': float('inf'),
+                            'finish_positions': [],
+                            'poles': 0,  # 폴포지션 데이터가 없으므로 0으로 설정
+                            'fastest_laps': 0,  # 최고속도랩 데이터가 없으므로 0으로 설정
+                            'dnf': 0,  # DNF는 결과에 없으면 0
+                            'championship_position': None
+                        }
+                    
+                    # 통계 업데이트
+                    driver_stats[driver_name]['races_entered'] += 1
+                    driver_stats[driver_name]['finish_positions'].append(position)
+                    
+                    # 최고 피니시 업데이트
+                    if position < driver_stats[driver_name]['best_finish']:
+                        driver_stats[driver_name]['best_finish'] = position
+                    
+                    # 포인트 계산
+                    if position in points_system:
+                        driver_stats[driver_name]['season_points'] += points_system[position]
+                    
+                    # 승수 계산
+                    if position == 1:
+                        driver_stats[driver_name]['season_wins'] += 1
+                    
+                    # 포디움 계산
+                    if position <= 3:
+                        driver_stats[driver_name]['season_podiums'] += 1
+            
+            # 평균 피니시 계산 및 챔피언십 포지션 결정
+            driver_list = []
+            for driver_name, stats in driver_stats.items():
+                if stats['finish_positions']:
+                    stats['average_finish'] = round(sum(stats['finish_positions']) / len(stats['finish_positions']), 1)
+                else:
+                    stats['average_finish'] = 0.0
+                
+                if stats['best_finish'] == float('inf'):
+                    stats['best_finish'] = None
+                
+                # driver_number 추출 (가능한 경우)
+                stats['driver_number'] = hash(driver_name) % 100  # 임시 드라이버 번호
+                stats['slug'] = driver_name.lower().replace(' ', '-')
+                stats['data_source'] = 'motorsportstats'
+                
+                driver_list.append(stats)
+            
+            # 포인트순으로 정렬하여 챔피언십 포지션 결정
+            driver_list.sort(key=lambda x: (-x['season_points'], -x['season_wins'], -x['season_podiums']))
+            
+            for i, driver in enumerate(driver_list, 1):
+                driver['championship_position'] = str(i)
+            
+            return driver_list
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate driver season stats: {e}")
+            return []
+
+    async def calculate_season_team_stats(self, year: int = 2025) -> List[Dict[str, Any]]:
+        """motorsportstats_2025_race_results.json을 기반으로 팀별 시즌 통계 계산"""
+        try:
+            import os
+            base_dir = os.path.dirname(__file__)
+            msstats_path = os.path.join(base_dir, "..", "motorsportstats_2025_race_results.json")
+            
+            if not os.path.exists(msstats_path):
+                logger.warning("motorsportstats_2025_race_results.json not found")
+                return []
+            
+            with open(msstats_path, 'r', encoding='utf-8') as f:
+                msstats_data = json.load(f)
+            
+            # 팀별 통계 초기화
+            team_stats = {}
+            
+            # F1 포인트 시스템
+            points_system = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
+            
+            for gp_slug, results in msstats_data.items():
+                for result in results:
+                    driver_name = result.get('DRIVER', '')
+                    team_name = result.get('TEAM', '')
+                    position_str = result.get('POS', '0')
+                    
+                    # 포지션을 숫자로 변환
+                    try:
+                        position = int(position_str)
+                    except (ValueError, TypeError):
+                        continue
+                    
+                    if team_name not in team_stats:
+                        team_stats[team_name] = {
+                            'name': team_name,
+                            'full_name': team_name,
+                            'season_points': 0,
+                            'season_wins': 0,
+                            'season_podiums': 0,
+                            'season_races': 0,
+                            'season_poles': 0,
+                            'season_fastest_laps': 0,
+                            'season_dnf': 0,
+                            'drivers_count': set(),  # 드라이버 이름들을 저장할 set
+                            'championship_position': None
+                        }
+                    
+                    # 드라이버 추가
+                    team_stats[team_name]['drivers_count'].add(driver_name)
+                    team_stats[team_name]['season_races'] += 1
+                    
+                    # 포인트 계산
+                    if position in points_system:
+                        team_stats[team_name]['season_points'] += points_system[position]
+                    
+                    # 승수 계산
+                    if position == 1:
+                        team_stats[team_name]['season_wins'] += 1
+                    
+                    # 포디움 계산
+                    if position <= 3:
+                        team_stats[team_name]['season_podiums'] += 1
+            
+            # 팀 리스트 생성 및 정렬
+            team_list = []
+            for team_name, stats in team_stats.items():
+                # drivers_count를 문자열로 변환
+                stats['drivers_count'] = f"{len(stats['drivers_count'])} drivers"
+                stats['team_slug'] = team_name.lower().replace(' ', '-').replace('formula', 'f1')
+                stats['data_source'] = 'motorsportstats'
+                
+                team_list.append(stats)
+            
+            # 포인트순으로 정렬하여 챔피언십 포지션 결정
+            team_list.sort(key=lambda x: (-x['season_points'], -x['season_wins'], -x['season_podiums']))
+            
+            for i, team in enumerate(team_list, 1):
+                team['championship_position'] = str(i)
+            
+            return team_list
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate team season stats: {e}")
+            return []
+
+    async def get_season_driver_stats_2025(self) -> Dict[str, Any]:
+        """2025년 드라이버 시즌 통계 반환"""
+        try:
+            driver_stats = await self.calculate_season_driver_stats(2025)
+            return {
+                'data': driver_stats,
+                'total_drivers': len(driver_stats),
+                'year': 2025,
+                'data_source': 'motorsportstats'
+            }
+        except Exception as e:
+            logger.error(f"Failed to get 2025 driver stats: {e}")
+            return {'data': [], 'total_drivers': 0, 'year': 2025, 'data_source': 'motorsportstats'}
+
+    async def get_season_team_stats_2025(self) -> Dict[str, Any]:
+        """2025년 팀 시즌 통계 반환"""
+        try:
+            team_stats = await self.calculate_season_team_stats(2025)
+            return {
+                'data': team_stats,
+                'total_teams': len(team_stats),
+                'year': 2025,
+                'data_source': 'motorsportstats'
+            }
+        except Exception as e:
+            logger.error(f"Failed to get 2025 team stats: {e}")
+            return {'data': [], 'total_teams': 0, 'year': 2025, 'data_source': 'motorsportstats'}

@@ -47,11 +47,11 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
     
     try {
       if (activeTab === 'drivers') {
-        console.log('🔄 Fetching driver standings from:', API_ENDPOINTS.driverStandings(selectedYear));
+        console.log('🔄 Fetching driver standings from:', API_ENDPOINTS.allDriversSeasonStats(selectedYear));
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
         
-        const response = await fetch(API_ENDPOINTS.driverStandings(selectedYear), {
+        const response = await fetch(API_ENDPOINTS.allDriversSeasonStats(selectedYear), {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,20 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         }
         const data = await response.json();
         console.log('✅ Driver standings data:', data);
-        setDriverStandings(data.standings || []);
+        
+        // 백엔드 데이터를 프론트엔드 형식으로 변환
+        const mappedDrivers = (data.data || []).map((driver: any) => ({
+          position: parseInt(driver.championship_position) || 0,
+          driver_number: driver.driver_number,
+          name: driver.name,
+          code: driver.slug?.substring(0, 3).toUpperCase() || driver.name.substring(0, 3).toUpperCase(),
+          team: driver.team,
+          points: driver.season_points || 0,
+          wins: driver.season_wins || 0,
+          headshot_url: `/images/drivers/${driver.name}.webp`
+        }));
+        
+        setDriverStandings(mappedDrivers);
       } else {
         console.log('🔄 Fetching constructor standings from:', API_ENDPOINTS.constructorStandings(selectedYear));
         const controller = new AbortController();

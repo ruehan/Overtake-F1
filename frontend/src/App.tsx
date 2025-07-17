@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import Dashboard from './pages/Dashboard';
 import StandingsPage from './pages/StandingsPage';
@@ -7,145 +8,163 @@ import RaceResultsPage from './pages/RaceResultsPage';
 import StandingsProgressionPage from './pages/StandingsProgressionPage';
 import StatisticsPage from './pages/StatisticsPage';
 import CircuitsPage from './pages/CircuitsPage';
+import FavoritesPage from './pages/FavoritesPage';
+import PersonalizedDashboard from './components/PersonalizedDashboard';
 import DriverDetailModal from './components/DriverDetailModal';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 const AppContent = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedDriverNumber, setSelectedDriverNumber] = useState<number | null>(null);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard onDriverClick={handleDriverClick} />;
-      case 'standings':
-        return <StandingsPage onDriverClick={handleDriverClick} />;
-      case 'progression':
-        return <StandingsProgressionPage />;
-      case 'statistics':
-        return <StatisticsPage />;
-      case 'circuits':
-        return <CircuitsPage />;
-      case 'calendar':
-        return <CalendarPage />;
-      case 'results':
-        return <RaceResultsPage />;
-      default:
-        return <Dashboard onDriverClick={handleDriverClick} />;
-    }
-  };
-
-  const handlePageChange = (page: string) => {
-    setCurrentPage(page);
-    setIsMobileMenuOpen(false); // 모바일에서 페이지 변경 시 메뉴 닫기
-  };
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleDriverClick = (driverNumber: number) => {
     setSelectedDriverNumber(driverNumber);
     setIsDriverModalOpen(true);
-    setIsMobileMenuOpen(false);
   };
 
-  const handleCloseDriverModal = () => {
-    setIsDriverModalOpen(false);
-    setSelectedDriverNumber(null);
+  const handlePageChange = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false); // 모바일에서 페이지 변경 시 메뉴 닫기
   };
+
+  // 현재 경로에 따라 활성 페이지 결정
+  const getCurrentPage = () => {
+    switch (location.pathname) {
+      case '/':
+      case '/dashboard':
+        return 'dashboard';
+      case '/personalized':
+        return 'personalized';
+      case '/standings':
+        return 'standings';
+      case '/progression':
+        return 'progression';
+      case '/statistics':
+        return 'statistics';
+      case '/circuits':
+        return 'circuits';
+      case '/calendar':
+        return 'calendar';
+      case '/results':
+        return 'results';
+      case '/favorites':
+        return 'favorites';
+      default:
+        return 'dashboard';
+    }
+  };
+
+  const currentPage = getCurrentPage();
+
+  const menuItems = [
+    { key: 'dashboard', label: t('대시보드'), path: '/dashboard' },
+    { key: 'personalized', label: t('맞춤 대시보드'), path: '/personalized' },
+    { key: 'standings', label: t('순위표'), path: '/standings' },
+    { key: 'progression', label: t('순위 진행'), path: '/progression' },
+    { key: 'statistics', label: t('통계'), path: '/statistics' },
+    { key: 'circuits', label: t('서킷'), path: '/circuits' },
+    { key: 'calendar', label: t('캘린더'), path: '/calendar' },
+    { key: 'results', label: t('결과'), path: '/results' },
+    { key: 'favorites', label: t('즐겨찾기'), path: '/favorites' },
+  ];
+
+  const langToggleOptions = [
+    { code: 'ko', label: '한국어', flag: '🇰🇷' },
+    { code: 'en', label: 'English', flag: '🇺🇸' }
+  ];
 
   return (
-    <div className="f1-app">
-      <nav className="f1-nav">
-        <div className="f1-nav-brand">
-          <h1>🏎️ OVERTAKE</h1>
+    <div className="app">
+      {/* Header */}
+      <header className="header">
+        <div className="header-left">
+          <h1 className="logo" onClick={() => handlePageChange('/dashboard')}>
+            🏁 Overtake
+          </h1>
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <button 
-          className="f1-nav-toggle"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle navigation"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        {/* Desktop Navigation */}
+        <nav className="desktop-nav">
+          {menuItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => handlePageChange(item.path)}
+              className={currentPage === item.key ? 'active' : ''}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-        <div className={`f1-nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Header Right */}
+        <div className="header-right">
+          {/* Language Toggle */}
+          <div className="language-toggle">
+            <select 
+              value={language} 
+              onChange={(e) => setLanguage(e.target.value as 'en' | 'ko')}
+              className="language-select"
+            >
+              {langToggleOptions.map(option => (
+                <option key={option.code} value={option.code}>
+                  {option.flag} {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mobile Menu Button */}
           <button 
-            className={currentPage === 'dashboard' ? 'active' : ''}
-            onClick={() => handlePageChange('dashboard')}
+            className="mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            <span className="nav-icon">🏠</span>
-            {t('nav.live')}
-          </button>
-          <button 
-            className={currentPage === 'standings' ? 'active' : ''}
-            onClick={() => handlePageChange('standings')}
-          >
-            <span className="nav-icon">🏆</span>
-            {t('nav.standings')}
-          </button>
-          <button 
-            className={currentPage === 'progression' ? 'active' : ''}
-            onClick={() => handlePageChange('progression')}
-          >
-            <span className="nav-icon">📈</span>
-            {t('nav.progression')}
-          </button>
-          <button 
-            className={currentPage === 'statistics' ? 'active' : ''}
-            onClick={() => handlePageChange('statistics')}
-          >
-            <span className="nav-icon">📊</span>
-            {t('nav.statistics')}
-          </button>
-          <button 
-            className={currentPage === 'circuits' ? 'active' : ''}
-            onClick={() => handlePageChange('circuits')}
-          >
-            <span className="nav-icon">🛣️</span>
-            {t('nav.circuits')}
-          </button>
-          <button 
-            className={currentPage === 'calendar' ? 'active' : ''}
-            onClick={() => handlePageChange('calendar')}
-          >
-            <span className="nav-icon">📅</span>
-            {t('nav.calendar')}
-          </button>
-          <button 
-            className={currentPage === 'results' ? 'active' : ''}
-            onClick={() => handlePageChange('results')}
-          >
-            <span className="nav-icon">🏁</span>
-            {t('nav.results')}
+            ☰
           </button>
         </div>
-        
-        {/* Language Toggle */}
-        <div className="f1-nav-lang">
+      </header>
+
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+        {menuItems.map((item) => (
           <button
-            className="f1-lang-toggle"
-            onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
+            key={item.key}
+            onClick={() => handlePageChange(item.path)}
+            className={currentPage === item.key ? 'active' : ''}
           >
-            <span className="lang-flag">{language === 'en' ? '🇰🇷' : '🇺🇸'}</span>
-            {language === 'en' ? '한글' : 'ENG'}
+            {item.label}
           </button>
-        </div>
-      </nav>
-      
-      <main className="f1-main">
-        {renderPage()}
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard onDriverClick={handleDriverClick} />} />
+          <Route path="/personalized" element={<PersonalizedDashboard />} />
+          <Route path="/standings" element={<StandingsPage onDriverClick={handleDriverClick} />} />
+          <Route path="/progression" element={<StandingsProgressionPage />} />
+          <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/circuits" element={<CircuitsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/results" element={<RaceResultsPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+        </Routes>
       </main>
-      
+
       {/* Driver Detail Modal */}
-      {selectedDriverNumber !== null && (
-        <DriverDetailModal 
+      {isDriverModalOpen && selectedDriverNumber && (
+        <DriverDetailModal
           driverNumber={selectedDriverNumber}
           isOpen={isDriverModalOpen}
-          onClose={handleCloseDriverModal}
+          onClose={() => {
+            setIsDriverModalOpen(false);
+            setSelectedDriverNumber(null);
+          }}
         />
       )}
     </div>

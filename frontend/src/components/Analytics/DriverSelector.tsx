@@ -18,7 +18,7 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredDrivers = drivers.filter(driver => 
+  const filteredDrivers = (drivers || []).filter(driver => 
     driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.abbreviation.toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.team_name.toLowerCase().includes(searchTerm.toLowerCase())
