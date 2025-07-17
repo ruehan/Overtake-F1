@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
-import { Driver } from '../types/f1Types';
+import { useApiCache } from '../hooks/useApiCache';
 import './PersonalizedDashboard.css';
 
 interface UserPreferences {
@@ -42,6 +42,12 @@ interface TeamStats {
   avg_position?: number;
 }
 
+interface DashboardData {
+  favorite_driver_stats: DriverStats[];
+  favorite_team_stats: TeamStats[];
+  last_update: string;
+}
+
 interface PersonalizedDashboardProps {
   userId?: string;
 }
@@ -55,14 +61,16 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
   
   // Data
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
-  const [favoriteDriverStats, setFavoriteDriverStats] = useState<DriverStats[]>([]);
-  const [favoriteTeamStats, setFavoriteTeamStats] = useState<TeamStats[]>([]);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [driverStandings, setDriverStandings] = useState<any[]>([]);
   const [teamStandings, setTeamStandings] = useState<any[]>([]);
   const [lastUpdate, setLastUpdate] = useState<string>('');
 
   useEffect(() => {
     fetchPersonalizedData();
+    // 5분마다 데이터 자동 갱신
+    const interval = setInterval(fetchPersonalizedData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [userId]);
 
   const fetchPersonalizedData = async () => {
@@ -70,69 +78,39 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
       setLoading(true);
       setError(null);
 
-      // 사용자 선호도 가져오기
-      const prefsResponse = await fetch(`${API_ENDPOINTS.users}/preferences/${userId}`);
+      // 병렬로 데이터 가져오기
+      const [prefsResponse, dashboardResponse, standingsResponse] = await Promise.all([
+        fetch(`${API_ENDPOINTS.users}/preferences/${userId}`),
+        fetch(`${API_ENDPOINTS.users}/stats/${userId}/dashboard`),
+        fetchStandings()
+      ]);
+
+      // 사용자 선호도 처리
       if (prefsResponse.ok) {
         const prefsData = await prefsResponse.json();
         setPreferences(prefsData.preferences);
-        
-        // 즐겨찾기 드라이버/팀 통계 가져오기
-        await Promise.all([
-          fetchFavoriteDriverStats(prefsData.preferences.favorite_drivers),
-          fetchFavoriteTeamStats(prefsData.preferences.favorite_teams),
-          fetchStandings()
-        ]);
+      } else if (prefsResponse.status === 404) {
+        // 사용자 선호도가 없는 경우
+        setPreferences(null);
       } else {
         throw new Error('사용자 선호도를 불러올 수 없습니다');
       }
 
-      setLastUpdate(new Date().toLocaleString('ko-KR'));
+      // 대시보드 데이터 처리
+      if (dashboardResponse.ok) {
+        const dashData = await dashboardResponse.json();
+        setDashboardData(dashData);
+        setLastUpdate(new Date(dashData.last_update).toLocaleString('ko-KR'));
+      } else {
+        console.warn('Dashboard data not available, using fallback');
+        setLastUpdate(new Date().toLocaleString('ko-KR'));
+      }
+
     } catch (err) {
+      console.error('Error fetching personalized data:', err);
       setError(err instanceof Error ? err.message : '데이터를 불러오는 중 오류가 발생했습니다');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchFavoriteDriverStats = async (favoriteDrivers: number[]) => {
-    if (favoriteDrivers.length === 0) return;
-
-    try {
-      const response = await fetch(`${API_ENDPOINTS.driverStandings}?year=2025`);
-      if (response.ok) {
-        const data = await response.json();
-        const allDriverStats = data.drivers || [];
-        
-        // 즐겨찾기 드라이버만 필터링
-        const favoriteStats = allDriverStats.filter((driver: any) => 
-          favoriteDrivers.includes(driver.driver_number)
-        );
-        
-        setFavoriteDriverStats(favoriteStats);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch favorite driver stats:', err);
-    }
-  };
-
-  const fetchFavoriteTeamStats = async (favoriteTeams: string[]) => {
-    if (favoriteTeams.length === 0) return;
-
-    try {
-      const response = await fetch(`${API_ENDPOINTS.teamStandings}?year=2025`);
-      if (response.ok) {
-        const data = await response.json();
-        const allTeamStats = data.teams || [];
-        
-        // 즐겨찾기 팀만 필터링
-        const favoriteStats = allTeamStats.filter((team: any) => 
-          favoriteTeams.includes(team.team_name)
-        );
-        
-        setFavoriteTeamStats(favoriteStats);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch favorite team stats:', err);
     }
   };
 
@@ -145,12 +123,14 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
 
       if (driverResponse.ok) {
         const driverData = await driverResponse.json();
-        setDriverStandings(driverData.drivers?.slice(0, 5) || []);
+        const drivers = driverData.drivers || driverData || [];
+        setDriverStandings(drivers.slice(0, 5));
       }
 
       if (teamResponse.ok) {
         const teamData = await teamResponse.json();
-        setTeamStandings(teamData.teams?.slice(0, 5) || []);
+        const teams = teamData.teams || teamData || [];
+        setTeamStandings(teams.slice(0, 5));
       }
     } catch (err) {
       console.warn('Failed to fetch standings:', err);
@@ -159,7 +139,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
 
   const getDriverPositionChange = (driverNumber: number): string => {
     // 실제로는 이전 레이스와 비교하여 순위 변화를 계산
-    const changes = ['+2', '-1', '=', '+3', '-2'];
+    const changes = ['+2', '-1', '=', '+3', '-2', '+1', '='];
     return changes[driverNumber % changes.length];
   };
 
@@ -169,11 +149,15 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
     return changes[teamName.length % changes.length];
   };
 
+  const navigateTo = (path: string) => {
+    window.location.href = path;
+  };
+
   if (loading) {
     return (
       <div className="personalized-loading">
         <div className="loading-spinner"></div>
-        <p>개인화된 대시보드를 불러오는 중...</p>
+        <p>🏁 개인화된 대시보드를 불러오는 중...</p>
       </div>
     );
   }
@@ -181,7 +165,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
   if (error) {
     return (
       <div className="personalized-error">
-        <h3>개인화 대시보드 오류</h3>
+        <h3>⚠️ 개인화 대시보드 오류</h3>
         <p>{error}</p>
         <button onClick={fetchPersonalizedData}>다시 시도</button>
       </div>
@@ -191,14 +175,20 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
   if (!preferences) {
     return (
       <div className="no-preferences">
-        <h3>😊 개인화된 대시보드에 오신 것을 환영합니다!</h3>
+        <h3>🎉 개인화된 대시보드에 오신 것을 환영합니다!</h3>
         <p>즐겨찾기를 설정하여 맞춤형 F1 경험을 시작하세요.</p>
-        <button onClick={() => window.location.href = '/favorites'}>
-          즐겨찾기 설정하기
+        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '1rem' }}>
+          좋아하는 드라이버와 팀을 선택하면 실시간 통계와 성과를 확인할 수 있습니다.
+        </p>
+        <button onClick={() => navigateTo('/favorites')}>
+          ⚙️ 즐겨찾기 설정하기
         </button>
       </div>
     );
   }
+
+  const favoriteDriverStats = dashboardData?.favorite_driver_stats || [];
+  const favoriteTeamStats = dashboardData?.favorite_team_stats || [];
 
   return (
     <div className="personalized-dashboard">
@@ -208,7 +198,23 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
           <p>즐겨찾기 드라이버와 팀의 최신 성과를 확인하세요</p>
         </div>
         <div className="last-update">
-          마지막 업데이트: {lastUpdate}
+          <small>마지막 업데이트: {lastUpdate}</small>
+          <br />
+          <button 
+            onClick={fetchPersonalizedData}
+            style={{ 
+              background: 'none', 
+              border: '1px solid rgba(212, 175, 55, 0.5)', 
+              color: '#D4AF37',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              marginTop: '0.5rem'
+            }}
+          >
+            🔄 새로고침
+          </button>
         </div>
       </div>
 
@@ -248,6 +254,12 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
                       <span className="stat-label">포디움</span>
                     </div>
                   </div>
+                  
+                  {driver.last_result && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', opacity: 0.8 }}>
+                      마지막 레이스: {driver.last_result}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -298,22 +310,27 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
         <div className="dashboard-card standings-preview">
           <h2>🏆 드라이버 챔피언십 (상위 5위)</h2>
           <div className="standings-list">
-            {driverStandings.map((driver, index) => (
-              <div 
-                key={driver.driver_number || index} 
-                className={`standings-item ${preferences.favorite_drivers?.includes(driver.driver_number) ? 'favorite' : ''}`}
-              >
-                <div className="position">{index + 1}</div>
-                <div className="driver-info">
-                  <span className="name">{driver.driver_name || driver.name}</span>
-                  <span className="team">{driver.team_name}</span>
+            {driverStandings.length > 0 ? driverStandings.map((driver, index) => {
+              const isFavorite = preferences.favorite_drivers?.includes(driver.driver_number);
+              return (
+                <div 
+                  key={driver.driver_number || index} 
+                  className={`standings-item ${isFavorite ? 'favorite' : ''}`}
+                >
+                  <div className="position">{index + 1}</div>
+                  <div className="driver-info">
+                    <span className="name">{driver.driver_name || driver.name}</span>
+                    <span className="team">{driver.team_name}</span>
+                  </div>
+                  <div className="points">{driver.season_points || driver.points}pts</div>
+                  {isFavorite && (
+                    <div className="favorite-indicator">⭐</div>
+                  )}
                 </div>
-                <div className="points">{driver.points}pts</div>
-                {preferences.favorite_drivers?.includes(driver.driver_number) && (
-                  <div className="favorite-indicator">⭐</div>
-                )}
-              </div>
-            ))}
+              );
+            }) : (
+              <p style={{ textAlign: 'center', opacity: 0.6 }}>스탠딩 데이터를 불러오는 중...</p>
+            )}
           </div>
         </div>
 
@@ -321,21 +338,26 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
         <div className="dashboard-card standings-preview">
           <h2>🏁 컨스트럭터 챔피언십 (상위 5위)</h2>
           <div className="standings-list">
-            {teamStandings.map((team, index) => (
-              <div 
-                key={team.team_name || index} 
-                className={`standings-item ${preferences.favorite_teams?.includes(team.team_name) ? 'favorite' : ''}`}
-              >
-                <div className="position">{index + 1}</div>
-                <div className="team-info">
-                  <span className="name">{team.team_name}</span>
+            {teamStandings.length > 0 ? teamStandings.map((team, index) => {
+              const isFavorite = preferences.favorite_teams?.includes(team.team_name);
+              return (
+                <div 
+                  key={team.team_name || index} 
+                  className={`standings-item ${isFavorite ? 'favorite' : ''}`}
+                >
+                  <div className="position">{index + 1}</div>
+                  <div className="team-info">
+                    <span className="name">{team.team_name}</span>
+                  </div>
+                  <div className="points">{team.season_points || team.points}pts</div>
+                  {isFavorite && (
+                    <div className="favorite-indicator">⭐</div>
+                  )}
                 </div>
-                <div className="points">{team.points}pts</div>
-                {preferences.favorite_teams?.includes(team.team_name) && (
-                  <div className="favorite-indicator">⭐</div>
-                )}
-              </div>
-            ))}
+              );
+            }) : (
+              <p style={{ textAlign: 'center', opacity: 0.6 }}>스탠딩 데이터를 불러오는 중...</p>
+            )}
           </div>
         </div>
 
@@ -345,25 +367,25 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
           <div className="actions-grid">
             <button 
               className="action-button"
-              onClick={() => window.location.href = '/standings'}
+              onClick={() => navigateTo('/standings')}
             >
               📊 전체 스탠딩 보기
             </button>
             <button 
               className="action-button"
-              onClick={() => window.location.href = '/calendar'}
+              onClick={() => navigateTo('/calendar')}
             >
               📅 레이스 캘린더
             </button>
             <button 
               className="action-button"
-              onClick={() => window.location.href = '/statistics'}
+              onClick={() => navigateTo('/statistics')}
             >
               📈 시즌 통계
             </button>
             <button 
               className="action-button"
-              onClick={() => window.location.href = '/favorites'}
+              onClick={() => navigateTo('/favorites')}
             >
               ⚙️ 즐겨찾기 설정
             </button>
@@ -374,7 +396,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
         {(favoriteDriverStats.length === 0 && favoriteTeamStats.length === 0) && (
           <div className="dashboard-card personalization-hint">
             <h2>💡 맞춤 설정 안내</h2>
-            <p>아직 즐겨찾기를 설정하지 않으셨네요!</p>
+            <p>아직 즐겨찾기 데이터가 없거나 로딩 중입니다!</p>
             <ul>
               <li>🏎️ 응원하는 드라이버를 즐겨찾기에 추가하세요</li>
               <li>🏁 좋아하는 팀을 선택하세요</li>
@@ -383,7 +405,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({
             </ul>
             <button 
               className="setup-button"
-              onClick={() => window.location.href = '/favorites'}
+              onClick={() => navigateTo('/favorites')}
             >
               지금 설정하기
             </button>

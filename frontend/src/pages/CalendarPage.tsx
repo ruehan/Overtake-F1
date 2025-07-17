@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useApiCache } from '../hooks/useApiCache';
 
 interface Session {
   session_type: string;
@@ -38,40 +39,44 @@ interface RaceWeekendsData {
 
 const CalendarPage: React.FC = () => {
   const { t, translateCountry } = useLanguage();
-  const [races, setRaces] = useState<Race[]>([]);
   const [nextRace, setNextRace] = useState<Race | null>(null);
   const [currentRace, setCurrentRace] = useState<Race | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'detailed'>('calendar');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCalendarData();
-  }, [selectedYear, viewMode]);
-
-  const fetchCalendarData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+  // 캘린더 데이터 캐싱
+  const {
+    data: races,
+    loading,
+    error,
+    refetch
+  } = useApiCache<Race[]>(
+    `calendar-${viewMode}-${selectedYear}`,
+    async () => {
       if (viewMode === 'calendar') {
         // Fetch basic calendar
         const calendarResponse = await fetch(API_ENDPOINTS.calendar(selectedYear));
         if (!calendarResponse.ok) throw new Error('Failed to fetch calendar');
         const calendarData = await calendarResponse.json();
-        setRaces(calendarData.calendar || []);
+        return calendarData.calendar || [];
       } else {
         // Fetch detailed race weekends
         const weekendsResponse = await fetch(API_ENDPOINTS.raceWeekends(selectedYear));
         if (!weekendsResponse.ok) throw new Error('Failed to fetch race weekends');
         const weekendsData = await weekendsResponse.json();
-        const raceWeekends = weekendsData.weekends || [];
-        console.log('[race-weekends API] weekendsData:', weekendsData);
-        setRaces(raceWeekends);
+        return weekendsData.weekends || [];
       }
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
 
+  useEffect(() => {
+    fetchNextAndCurrentRace();
+  }, []);
+
+  const fetchNextAndCurrentRace = async () => {
+    try {
       // Fetch next race
       const nextResponse = await fetch(API_ENDPOINTS.nextRace);
       if (nextResponse.ok) {
@@ -87,9 +92,7 @@ const CalendarPage: React.FC = () => {
       }
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching next/current race:', err);
     }
   };
 
@@ -285,7 +288,7 @@ const CalendarPage: React.FC = () => {
 
   const renderBasicCalendar = () => (
     <div className="f1-grid f1-grid-3">
-      {races.map((race) => {
+      {(races || []).map((race) => {
         const { status, label } = getRaceStatus(race);
         return (
           <div key={race.round} className="f1-card" style={{ marginBottom: 0 }}>
@@ -320,7 +323,7 @@ const CalendarPage: React.FC = () => {
 
   const renderDetailedWeekends = () => (
     <div className="f1-grid f1-grid-2">
-      {races.map((race) => (
+      {(races || []).map((race) => (
         <div key={race.round} className="f1-card" style={{ marginBottom: 0 }}>
           <div 
             style={{ cursor: 'pointer' }}

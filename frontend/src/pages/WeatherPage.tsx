@@ -90,6 +90,27 @@ const WeatherPage: React.FC = () => {
               <option value={12}>12 Hours</option>
             </select>
           </div>
+          
+          {/* 새로고침 버튼 */}
+          <div className="control-group">
+            <button
+              onClick={fetchAvailableSessions}
+              style={{
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                color: '#D4AF37',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                cursor: sessionsLoading ? 'not-allowed' : 'pointer',
+                opacity: sessionsLoading ? 0.6 : 1,
+                marginTop: '18px'
+              }}
+              disabled={sessionsLoading}
+              title="세션 목록 새로고침"
+            >
+              {sessionsLoading ? '⏳' : '🔄'}
+            </button>
+          </div>
         </div>
       </div>
 

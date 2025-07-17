@@ -2,8 +2,9 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #001122 0%, #002C5F 50%, #003366 100%);
   min-height: 100vh;
+  color: #F8F8FF;
 }
 
 .standings-page.loading,
@@ -20,6 +21,7 @@
   font-size: 4rem;
   animation: pulse 2s ease-in-out infinite;
   margin-bottom: 20px;
+  color: #D4AF37;
 }
 
 @keyframes pulse {
@@ -31,23 +33,27 @@
   font-size: 4rem;
   margin-bottom: 20px;
   opacity: 0.7;
+  color: #ef4444;
 }
 
 .retry-btn {
-  background: #007bff;
-  color: white;
-  border: none;
+  background: linear-gradient(45deg, #D4AF37, #B8941F);
+  color: #F8F8FF;
+  border: 1px solid rgba(212, 175, 55, 0.4);
   padding: 12px 24px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   margin-top: 16px;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .retry-btn:hover {
-  background: #0056b3;
+  background: linear-gradient(45deg, #FFD700, #D4AF37);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
 }
 
 /* Header */

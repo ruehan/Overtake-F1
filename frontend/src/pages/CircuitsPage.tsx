@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useApiCache } from '../hooks/useApiCache';
 
 interface CircuitLocation {
   locality: string;
@@ -59,21 +60,18 @@ interface CircuitsData {
 
 const CircuitsPage: React.FC = () => {
   const { t, translateCountry } = useLanguage();
-  const [circuitsData, setCircuitsData] = useState<CircuitsData | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCircuitsData();
-  }, [selectedYear, selectedCircuit]);
-
-  const fetchCircuitsData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+  // 서킷 데이터 캐싱
+  const {
+    data: circuitsData,
+    loading,
+    error,
+    refetch
+  } = useApiCache<CircuitsData>(
+    `circuits-${selectedYear}-${selectedCircuit || 'all'}`,
+    async () => {
       let url = API_ENDPOINTS.circuits(selectedYear);
       if (selectedCircuit) {
         url += `&circuit_id=${selectedCircuit}`;
@@ -81,14 +79,12 @@ const CircuitsPage: React.FC = () => {
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch circuits data');
-      const data = await response.json();
-      setCircuitsData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return await response.json();
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
+
+
 
   const renderCircuitsList = () => {
     if (!circuitsData?.circuits) return null;
@@ -390,7 +386,7 @@ const CircuitsPage: React.FC = () => {
       
       {/* Controls */}
       <div className="f1-card">
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <div>
             <label style={{ marginRight: '0.5rem' }}>{t('circuits.season')}:</label>
             <select 
@@ -413,13 +409,33 @@ const CircuitsPage: React.FC = () => {
             </select>
           </div>
           
-          {selectedCircuit && (
-            <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-              Viewing: <span style={{ color: '#ff6b35', fontWeight: '600' }}>
-                {circuitsData.circuit_info?.name}
-              </span>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {selectedCircuit && (
+              <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                Viewing: <span style={{ color: '#ff6b35', fontWeight: '600' }}>
+                  {circuitsData?.circuit_info?.name}
+                </span>
+              </div>
+            )}
+            
+            {/* 새로고침 버튼 */}
+            <button
+              onClick={refetch}
+              disabled={loading}
+              style={{
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                color: '#D4AF37',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1
+              }}
+              title="데이터 새로고침"
+            >
+              {loading ? '⏳' : '🔄'}
+            </button>
+          </div>
         </div>
       </div>
 

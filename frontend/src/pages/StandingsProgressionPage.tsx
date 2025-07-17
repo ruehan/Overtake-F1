@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useApiCache } from '../hooks/useApiCache';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,44 +42,34 @@ interface StandingsProgression {
 
 const StandingsProgressionPage: React.FC = () => {
   const { t } = useLanguage();
-  const [progression, setProgression] = useState<StandingsProgression | null>(null);
   const [selectedYear, setSelectedYear] = useState(2024); // 2024가 데이터가 많음
   const [viewType, setViewType] = useState<'drivers' | 'constructors'>('drivers');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProgressionData();
-  }, [selectedYear]);
-
-  const fetchProgressionData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+  // 진행도 데이터 캐싱
+  const {
+    data: progression,
+    loading,
+    error,
+    refetch
+  } = useApiCache<StandingsProgression>(
+    `standings-progression-${selectedYear}`,
+    async () => {
       console.log('🔄 Fetching progression data from:', API_ENDPOINTS.standingsProgression(selectedYear));
       const response = await fetch(API_ENDPOINTS.standingsProgression(selectedYear));
-      console.log('📥 Progression response:', response.status, response.statusText);
+      
       if (!response.ok) {
         throw new Error(`Failed to fetch progression data: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
       console.log('✅ Progression data:', data);
-      setProgression(data.progression);
-      
-      // 자동으로 상위 8명/팀 선택
-      if (data.progression) {
-        const items = viewType === 'drivers' ? data.progression.driver_progression : data.progression.constructor_progression;
-        const topItems = Object.keys(items).slice(0, 8);
-        setSelectedItems(new Set(topItems));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data.progression;
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
+
+
 
   useEffect(() => {
     if (progression) {
@@ -427,6 +418,25 @@ const StandingsProgressionPage: React.FC = () => {
               }}
             >
               🏭 CONSTRUCTORS
+            </button>
+            
+            {/* 새로고침 버튼 */}
+            <button
+              onClick={refetch}
+              disabled={loading}
+              style={{
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                color: '#D4AF37',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                marginLeft: '1rem'
+              }}
+              title="데이터 새로고침"
+            >
+              {loading ? '⏳' : '🔄'}
             </button>
           </div>
         </div>

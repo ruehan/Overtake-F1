@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useApiCache } from '../hooks/useApiCache';
 
 interface DriverResult {
   position: number;
@@ -28,41 +29,35 @@ interface RaceResult {
 
 const RaceResultsPage: React.FC = () => {
   const { t, translateStatus, translateCountry } = useLanguage();
-  const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [latestRace, setLatestRace] = useState<RaceResult | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025); // Default to 2025 season
   const [selectedRace, setSelectedRace] = useState<RaceResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchRaceResults();
-  }, [selectedYear]);
-
-  const fetchRaceResults = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+  // 레이스 결과 데이터 캐싱
+  const {
+    data: raceResults,
+    loading,
+    error,
+    refetch
+  } = useApiCache<RaceResult[]>(
+    `race-results-${selectedYear}`,
+    async () => {
       // Fetch all race results for the year
       const response = await fetch(API_ENDPOINTS.raceResults(selectedYear));
       if (!response.ok) throw new Error('Failed to fetch race results');
       const data = await response.json();
-      setRaceResults(data.results || []);
-
-      // Fetch latest completed race
-      const latestResponse = await fetch(API_ENDPOINTS.latestResult);
-      if (latestResponse.ok) {
-        const latestData = await latestResponse.json();
-        setLatestRace(latestData.latest_result);
+      
+      const results = data.results || [];
+      // Set the latest race
+      if (results.length > 0) {
+        setLatestRace(results[results.length - 1]);
       }
+      return results;
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -152,13 +147,13 @@ const RaceResultsPage: React.FC = () => {
       <div className="f1-card">
         <h3 className="f1-card-title">📋 {selectedYear} {t('standings.season')} {t('nav.results')}</h3>
         
-        {raceResults.length === 0 ? (
+        {(raceResults || []).length === 0 ? (
           <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
             {t('common.noData')} ({selectedYear})
           </p>
         ) : (
           <div className="f1-grid f1-grid-2">
-            {raceResults.map((race) => (
+            {(raceResults || []).map((race) => (
               <div key={race.round} className="f1-card" style={{ marginBottom: 0 }}>
                 <div 
                   style={{ cursor: 'pointer' }}

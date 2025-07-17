@@ -1,4 +1,4 @@
-/* F1 Dashboard Styles */
+/* F1 Dashboard Styles - Monaco Grand Prix Theme */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
 
 * {
@@ -10,7 +10,7 @@
 body {
   font-family: 'Rajdhani', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   background: #000;
-  color: #fff;
+  color: #F8F8FF;
   overflow-x: hidden;
   font-weight: 400;
   letter-spacing: 0.3px;
@@ -18,7 +18,7 @@ body {
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, #001122 0%, #002C5F 50%, #003366 100%);
 }
 
 /* Header */
@@ -27,24 +27,24 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 44, 95, 0.95);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 44, 95, 0.4);
 }
 
 .header-left .logo {
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(45deg, #ff6b35, #f7931e, #ff8c42);
+  background: linear-gradient(45deg, #D4AF37, #FFD700, #F7E98E);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
   letter-spacing: 3px;
   text-transform: uppercase;
   cursor: pointer;
@@ -53,31 +53,47 @@ body {
 
 .header-left .logo:hover {
   transform: scale(1.05);
+  text-shadow: 0 0 40px rgba(212, 175, 55, 0.8);
 }
 
 /* Desktop Navigation */
 .desktop-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
 }
 
 .desktop-nav button {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  color: #fff;
-  padding: 0.8rem 1.5rem;
+  background: rgba(248, 248, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #F8F8FF;
+  padding: 0.6rem 1rem;
   border-radius: 8px;
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 70px;
+}
+
+.desktop-nav button .nav-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.desktop-nav button .nav-label {
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .desktop-nav button::before {
@@ -87,7 +103,7 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
   transition: left 0.5s ease;
 }
 
@@ -96,16 +112,17 @@ body {
 }
 
 .desktop-nav button:hover {
-  border-color: rgba(255, 107, 53, 0.6);
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
   transform: translateY(-2px);
+  background: rgba(0, 44, 95, 0.3);
 }
 
 .desktop-nav button.active {
-  background: linear-gradient(45deg, rgba(255, 107, 53, 0.2), rgba(247, 147, 30, 0.2));
-  border-color: rgba(255, 107, 53, 0.8);
-  color: #ff6b35;
-  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(45deg, rgba(212, 175, 55, 0.2), rgba(255, 215, 0, 0.15));
+  border-color: rgba(212, 175, 55, 0.8);
+  color: #D4AF37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
 }
 
 /* Header Right */
@@ -121,9 +138,9 @@ body {
 }
 
 .language-select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  color: #fff;
+  background: rgba(248, 248, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #F8F8FF;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
@@ -134,21 +151,21 @@ body {
 }
 
 .language-select:hover {
-  border-color: rgba(255, 107, 53, 0.6);
-  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
 
 .language-select option {
-  background: #1a1a1a;
-  color: #fff;
+  background: #002C5F;
+  color: #F8F8FF;
 }
 
 /* Mobile Menu Button */
 .mobile-menu-btn {
   display: none;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  color: #fff;
+  background: rgba(248, 248, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #F8F8FF;
   padding: 0.8rem;
   border-radius: 6px;
   font-size: 1.2rem;
@@ -157,8 +174,8 @@ body {
 }
 
 .mobile-menu-btn:hover {
-  border-color: rgba(255, 107, 53, 0.6);
-  box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
 
 /* Mobile Menu */
@@ -169,7 +186,7 @@ body {
   left: 0;
   width: 100%;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 44, 95, 0.95);
   backdrop-filter: blur(20px);
   z-index: 999;
   flex-direction: column;
@@ -186,28 +203,38 @@ body {
 }
 
 .mobile-menu button {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  color: #fff;
+  background: rgba(248, 248, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #F8F8FF;
   padding: 1rem 2rem;
   border-radius: 8px;
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
   font-size: 1.2rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 200px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.mobile-menu button .nav-icon {
+  font-size: 1.5rem;
+}
+
+.mobile-menu button .nav-label {
+  font-size: 1rem;
 }
 
 .mobile-menu button:hover,
 .mobile-menu button.active {
-  background: linear-gradient(45deg, rgba(255, 107, 53, 0.2), rgba(247, 147, 30, 0.2));
-  border-color: rgba(255, 107, 53, 0.8);
-  color: #ff6b35;
-  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(45deg, rgba(212, 175, 55, 0.2), rgba(255, 215, 0, 0.15));
+  border-color: rgba(212, 175, 55, 0.8);
+  color: #D4AF37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
 }
 
 /* Main Content */
@@ -218,9 +245,9 @@ body {
 
 /* Common Card Styles */
 .f1-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(248, 248, 255, 0.05);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(192, 192, 192, 0.2);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -229,8 +256,9 @@ body {
 
 .f1-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 107, 53, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 44, 95, 0.4);
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(248, 248, 255, 0.08);
 }
 
 .f1-card-title {
@@ -238,7 +266,7 @@ body {
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: #ff6b35;
+  color: #D4AF37;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -280,12 +308,12 @@ body {
 }
 
 .f1-status.upcoming {
-  background: linear-gradient(45deg, #f59e0b, #d97706);
+  background: linear-gradient(45deg, #D4AF37, #B8941F);
   color: white;
 }
 
 .f1-status.completed {
-  background: linear-gradient(45deg, #6b7280, #4b5563);
+  background: linear-gradient(45deg, #C0C0C0, #808080);
   color: white;
 }
 
@@ -305,13 +333,13 @@ body {
 .f1-table td {
   padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(192, 192, 192, 0.2);
 }
 
 .f1-table th {
   font-family: 'Rajdhani', 'Noto Sans KR', sans-serif;
-  background: rgba(255, 107, 53, 0.1);
-  color: #ff6b35;
+  background: rgba(212, 175, 55, 0.1);
+  color: #D4AF37;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -319,7 +347,7 @@ body {
 }
 
 .f1-table tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(248, 248, 255, 0.05);
 }
 
 .f1-table .position {
@@ -329,8 +357,8 @@ body {
   letter-spacing: 0.5px;
 }
 
-.f1-table .position.p1 { color: #ffd700; }
-.f1-table .position.p2 { color: #c0c0c0; }
+.f1-table .position.p1 { color: #FFD700; }
+.f1-table .position.p2 { color: #C0C0C0; }
 .f1-table .position.p3 { color: #cd7f32; }
 
 /* Loading Animation */
@@ -343,14 +371,14 @@ body {
   font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 1px;
-  color: #ff6b35;
+  color: #D4AF37;
 }
 
 .f1-loading::after {
   content: '';
   width: 20px;
   height: 20px;
-  border: 2px solid #ff6b35;
+  border: 2px solid #D4AF37;
   border-top: 2px solid transparent;
   border-radius: 50%;
   margin-left: 10px;
@@ -512,18 +540,33 @@ body {
   }
 }
 
-/* 모바일 햄버거 메뉴 애니메이션 */
-@media (max-width: 768px) {
-  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:first-child {
-    transform: rotate(45deg);
+/* 반응형 네비게이션 */
+@media (max-width: 1200px) {
+  .desktop-nav button .nav-label {
+    font-size: 0.7rem;
   }
   
-  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:nth-child(2) {
-    opacity: 0;
-    transform: translateX(20px);
+  .desktop-nav button {
+    min-width: 60px;
+    padding: 0.5rem 0.8rem;
   }
   
-  .f1-nav-links.mobile-open ~ .f1-nav-toggle span:nth-child(3) {
-    transform: rotate(-45deg);
+  .desktop-nav {
+    gap: 0.2rem;
+  }
+}
+
+@media (max-width: 1000px) {
+  .desktop-nav button {
+    min-width: 55px;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .desktop-nav button .nav-label {
+    font-size: 0.65rem;
+  }
+  
+  .desktop-nav button .nav-icon {
+    font-size: 1.1rem;
   }
 }

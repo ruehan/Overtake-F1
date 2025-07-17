@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useApiCache } from '../hooks/useApiCache';
 
 interface DriverStat {
   driver_number: number;
@@ -46,21 +47,18 @@ interface StatisticsData {
 
 const StatisticsPage: React.FC = () => {
   const { t } = useLanguage();
-  const [statisticsData, setStatisticsData] = useState<StatisticsData | null>(null);
   const [selectedYear, setSelectedYear] = useState(2025); // 2025가 기본값
   const [viewType, setViewType] = useState<'drivers' | 'teams'>('drivers');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchStatisticsData();
-  }, [selectedYear, viewType]);
-
-  const fetchStatisticsData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+  // 통계 데이터 캐싱
+  const {
+    data: statisticsData,
+    loading,
+    error,
+    refetch
+  } = useApiCache<StatisticsData>(
+    `statistics-${viewType}-${selectedYear}`,
+    async () => {
       let response;
       if (viewType === 'drivers') {
         // 새로운 JSON 기반 API 사용 (2025년용)
@@ -79,14 +77,12 @@ const StatisticsPage: React.FC = () => {
       }
       
       if (!response.ok) throw new Error('Failed to fetch statistics data');
-      const data = await response.json();
-      setStatisticsData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return await response.json();
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
+
+
 
   const getStatColor = (value: number, max: number, type: 'good' | 'bad' = 'good') => {
     const intensity = Math.min(value / max, 1);
@@ -364,7 +360,7 @@ const StatisticsPage: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button
               onClick={() => setViewType('drivers')}
               style={{
@@ -390,6 +386,25 @@ const StatisticsPage: React.FC = () => {
               }}
             >
               🏭 CONSTRUCTORS
+            </button>
+            
+            {/* 새로고침 버튼 */}
+            <button
+              onClick={refetch}
+              disabled={loading}
+              style={{
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                color: '#D4AF37',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                marginLeft: '1rem'
+              }}
+              title="데이터 새로고침"
+            >
+              {loading ? '⏳' : '🔄'}
             </button>
           </div>
         </div>

@@ -2,18 +2,20 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #001122 0%, #002C5F 50%, #003366 100%);
   min-height: 100vh;
+  color: #F8F8FF;
 }
 
 /* Header */
 .radio-page-header {
-  background: #fff;
+  background: rgba(0, 44, 95, 0.6);
+  backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e6ed;
+  box-shadow: 0 8px 32px rgba(0, 44, 95, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -22,7 +24,7 @@
 
 .header-content h1 {
   margin: 0 0 8px 0;
-  color: #2c3e50;
+  color: #D4AF37;
   font-size: 2rem;
   font-weight: 700;
   display: flex;
@@ -37,7 +39,7 @@
 
 .header-content p {
   margin: 0;
-  color: #6c757d;
+  color: #C0C0C0;
   font-size: 1.1rem;
   line-height: 1.5;
 }
@@ -173,11 +175,12 @@
 }
 
 .player-section {
-  background: #fff;
+  background: rgba(0, 44, 95, 0.6);
+  backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e6ed;
+  box-shadow: 0 8px 32px rgba(0, 44, 95, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   height: fit-content;
   position: sticky;
   top: 20px;
@@ -185,7 +188,7 @@
 
 .player-section h3 {
   margin: 0 0 16px 0;
-  color: #333;
+  color: #D4AF37;
   font-size: 1.2rem;
   font-weight: 600;
 }
@@ -226,11 +229,12 @@
 }
 
 .stat-card {
-  background: #fff;
+  background: rgba(0, 44, 95, 0.6);
+  backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e6ed;
+  box-shadow: 0 8px 32px rgba(0, 44, 95, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   transition: transform 0.2s ease;
 }
 
@@ -254,7 +258,7 @@
 
 .stat-header h3 {
   margin: 0;
-  color: #333;
+  color: #D4AF37;
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -262,13 +266,13 @@
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #007bff;
+  color: #D4AF37;
   margin-bottom: 8px;
   line-height: 1;
 }
 
 .stat-description {
-  color: #6c757d;
+  color: #C0C0C0;
   font-size: 14px;
   line-height: 1.4;
 }
@@ -298,13 +302,13 @@
 
 .driver-stat .driver-name {
   font-weight: 600;
-  color: #333;
+  color: #D4AF37;
   font-size: 16px;
   margin-bottom: 4px;
 }
 
 .driver-stat .message-count {
-  color: #6c757d;
+  color: #C0C0C0;
   font-size: 14px;
 }
 
@@ -358,18 +362,18 @@
 
 .driver-row .driver-name {
   font-weight: 600;
-  color: #333;
+  color: #D4AF37;
   font-size: 14px;
   margin-bottom: 2px;
 }
 
 .driver-row .team-name {
-  color: #6c757d;
+  color: #C0C0C0;
   font-size: 12px;
 }
 
 .message-count-badge {
-  background: #007bff;
+  background: #D4AF37;
   color: white;
   padding: 6px 12px;
   border-radius: 12px;

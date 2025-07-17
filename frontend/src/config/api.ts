@@ -69,8 +69,8 @@ export const API_ENDPOINTS = {
   currentRace: `${API_BASE_URL}/v1/calendar/current`,
   
   // Race results
-  raceResults: (year: number) => `${API_BASE_URL}/v1/race-results?year=${year}`,
-  latestResult: `${API_BASE_URL}/v1/race-results/latest`,
+  raceResults: (year: number) => `${API_BASE_URL}/race-results?year=${year}`,
+  latestResult: `${API_BASE_URL}/race-results/latest`,
   
   // Statistics
   statistics: (year: number, type: string) => `${API_BASE_URL}/v1/${type === 'drivers' ? 'driver-statistics' : 'team-statistics'}?year=${year}`,

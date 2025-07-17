@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { useApiCache } from '../hooks/useApiCache';
 
 interface DriverStanding {
   position: number;
@@ -32,85 +33,87 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
   usePageMeta('standings');
   const [activeTab, setActiveTab] = useState<'drivers' | 'constructors'>('drivers');
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [driverStandings, setDriverStandings] = useState<DriverStanding[]>([]);
-  const [constructorStandings, setConstructorStandings] = useState<ConstructorStanding[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchStandingsData();
-  }, [selectedYear, activeTab]);
+  // 드라이버 스탠딩 캐시
+  const {
+    data: driverStandings,
+    loading: driversLoading,
+    error: driversError,
+    refetch: refetchDrivers
+  } = useApiCache<DriverStanding[]>(
+    `drivers-standings-${selectedYear}`,
+    async () => {
+      console.log('🔄 Fetching driver standings from:', API_ENDPOINTS.allDriversSeasonStats(selectedYear));
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch(API_ENDPOINTS.allDriversSeasonStats(selectedYear), {
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch driver standings: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Driver standings data:', data);
+      
+      return (data.data || []).map((driver: any) => ({
+        position: parseInt(driver.championship_position) || 0,
+        driver_number: driver.driver_number,
+        name: driver.name,
+        code: driver.slug?.substring(0, 3).toUpperCase() || driver.name.substring(0, 3).toUpperCase(),
+        team: driver.team,
+        points: driver.season_points || 0,
+        wins: driver.season_wins || 0,
+        headshot_url: `/images/drivers/${driver.name}.webp`
+      }));
+    },
+    { staleTime: 60 * 60 * 1000 } // 1시간 동안 신선한 데이터로 간주
+  );
 
-  const fetchStandingsData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      if (activeTab === 'drivers') {
-        console.log('🔄 Fetching driver standings from:', API_ENDPOINTS.allDriversSeasonStats(selectedYear));
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
-        
-        const response = await fetch(API_ENDPOINTS.allDriversSeasonStats(selectedYear), {
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        clearTimeout(timeoutId);
-        console.log('📥 Driver standings response:', response.status, response.statusText);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch driver standings: ${response.status} ${response.statusText}`);
-        }
-        const data = await response.json();
-        console.log('✅ Driver standings data:', data);
-        
-        // 백엔드 데이터를 프론트엔드 형식으로 변환
-        const mappedDrivers = (data.data || []).map((driver: any) => ({
-          position: parseInt(driver.championship_position) || 0,
-          driver_number: driver.driver_number,
-          name: driver.name,
-          code: driver.slug?.substring(0, 3).toUpperCase() || driver.name.substring(0, 3).toUpperCase(),
-          team: driver.team,
-          points: driver.season_points || 0,
-          wins: driver.season_wins || 0,
-          headshot_url: `/images/drivers/${driver.name}.webp`
-        }));
-        
-        setDriverStandings(mappedDrivers);
-      } else {
-        console.log('🔄 Fetching constructor standings from:', API_ENDPOINTS.constructorStandings(selectedYear));
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
-        
-        const response = await fetch(API_ENDPOINTS.constructorStandings(selectedYear), {
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        clearTimeout(timeoutId);
-        console.log('📥 Constructor standings response:', response.status, response.statusText);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch constructor standings: ${response.status} ${response.statusText}`);
-        }
-        const data = await response.json();
-        console.log('✅ Constructor standings data:', data);
-        setConstructorStandings(data.standings || []);
+  // 컨스트럭터 스탠딩 캐시
+  const {
+    data: constructorStandings,
+    loading: constructorsLoading,
+    error: constructorsError,
+    refetch: refetchConstructors
+  } = useApiCache<ConstructorStanding[]>(
+    `constructors-standings-${selectedYear}`,
+    async () => {
+      console.log('🔄 Fetching constructor standings from:', API_ENDPOINTS.constructorStandings(selectedYear));
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch(API_ENDPOINTS.constructorStandings(selectedYear), {
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch constructor standings: ${response.status} ${response.statusText}`);
       }
-    } catch (err) {
-      console.error('❌ Standings fetch error:', err);
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          setError('Request timeout - Please check your connection and try again');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('Unknown error occurred');
-      }
-    } finally {
-      setLoading(false);
+      
+      const data = await response.json();
+      console.log('✅ Constructor standings data:', data);
+      return data.standings || [];
+    },
+    { staleTime: 60 * 60 * 1000 }
+  );
+
+  // 현재 탭에 따른 로딩/에러 상태
+  const loading = activeTab === 'drivers' ? driversLoading : constructorsLoading;
+  const error = activeTab === 'drivers' ? driversError : constructorsError;
+
+  // 새로고침 함수
+  const handleRefresh = () => {
+    if (activeTab === 'drivers') {
+      refetchDrivers();
+    } else {
+      refetchConstructors();
     }
   };
 
@@ -159,7 +162,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         </div>
 
         {/* Tab Buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <button
             className={`f1-nav-links button ${activeTab === 'drivers' ? 'active' : ''}`}
             onClick={() => setActiveTab('drivers')}
@@ -188,6 +191,27 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
           >
             {t('standings.constructors')}
           </button>
+          
+          {/* 새로고침 버튼 */}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            style={{
+              background: 'rgba(212, 175, 55, 0.2)',
+              border: '1px solid rgba(212, 175, 55, 0.5)',
+              color: '#D4AF37',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            title="데이터 새로고침"
+          >
+            {loading ? '⏳' : '🔄'}
+          </button>
         </div>
       </div>
 
@@ -196,7 +220,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         <div className="f1-card">
           <h3 className="f1-card-title">{t('standings.drivers')}</h3>
           
-          {driverStandings.length === 0 ? (
+          {!driverStandings || driverStandings.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
               {t('common.noData')} ({selectedYear})
             </p>
@@ -212,7 +236,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
                 </tr>
               </thead>
               <tbody>
-                {driverStandings.map((driver) => (
+                {(driverStandings || []).map((driver) => (
                   <tr 
                     key={driver.driver_number}
                     style={{ 
@@ -295,7 +319,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
         <div className="f1-card">
           <h3 className="f1-card-title">{t('standings.constructors')}</h3>
           
-          {constructorStandings.length === 0 ? (
+          {!constructorStandings || constructorStandings.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#ccc', padding: '2rem' }}>
               {t('common.noData')} ({selectedYear})
             </p>
@@ -311,7 +335,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
                 </tr>
               </thead>
               <tbody>
-                {constructorStandings.map((constructor) => (
+                {(constructorStandings || []).map((constructor) => (
                   <tr key={constructor.team}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -365,12 +389,12 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
       )}
 
       {/* Championship Analysis */}
-      {(driverStandings.length > 0 || constructorStandings.length > 0) && (
+      {((driverStandings && driverStandings.length > 0) || (constructorStandings && constructorStandings.length > 0)) && (
         <div className="f1-card">
           <h3 className="f1-card-title">📊 {t('standings.battle')}</h3>
           
           <div className="f1-grid f1-grid-2">
-            {driverStandings.length > 1 && (
+            {driverStandings && driverStandings.length > 1 && (
               <div>
                 <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{t('standings.driverChampionship')}</h4>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -392,7 +416,7 @@ const StandingsPage: React.FC<StandingsPageProps> = ({ onDriverClick }) => {
               </div>
             )}
 
-            {constructorStandings.length > 1 && (
+            {constructorStandings && constructorStandings.length > 1 && (
               <div>
                 <h4 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{t('standings.constructorChampionship')}</h4>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>

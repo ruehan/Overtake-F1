@@ -61,15 +61,15 @@ const AppContent = () => {
   const currentPage = getCurrentPage();
 
   const menuItems = [
-    { key: 'dashboard', label: t('대시보드'), path: '/dashboard' },
-    { key: 'personalized', label: t('맞춤 대시보드'), path: '/personalized' },
-    { key: 'standings', label: t('순위표'), path: '/standings' },
-    { key: 'progression', label: t('순위 진행'), path: '/progression' },
-    { key: 'statistics', label: t('통계'), path: '/statistics' },
-    { key: 'circuits', label: t('서킷'), path: '/circuits' },
-    { key: 'calendar', label: t('캘린더'), path: '/calendar' },
-    { key: 'results', label: t('결과'), path: '/results' },
-    { key: 'favorites', label: t('즐겨찾기'), path: '/favorites' },
+    { key: 'dashboard', label: t('대시보드'), path: '/dashboard', icon: '🏠' },
+    { key: 'personalized', label: t('맞춤'), path: '/personalized', icon: '⭐' },
+    { key: 'standings', label: t('순위표'), path: '/standings', icon: '🏆' },
+    { key: 'progression', label: t('진행'), path: '/progression', icon: '📈' },
+    { key: 'statistics', label: t('통계'), path: '/statistics', icon: '📊' },
+    { key: 'circuits', label: t('서킷'), path: '/circuits', icon: '🛣️' },
+    { key: 'calendar', label: t('캘린더'), path: '/calendar', icon: '📅' },
+    { key: 'results', label: t('결과'), path: '/results', icon: '🏁' },
+    { key: 'favorites', label: t('즐겨찾기'), path: '/favorites', icon: '💖' },
   ];
 
   const langToggleOptions = [
@@ -95,7 +95,8 @@ const AppContent = () => {
               onClick={() => handlePageChange(item.path)}
               className={currentPage === item.key ? 'active' : ''}
             >
-              {item.label}
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -135,7 +136,8 @@ const AppContent = () => {
             onClick={() => handlePageChange(item.path)}
             className={currentPage === item.key ? 'active' : ''}
           >
-            {item.label}
+            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-label">{item.label}</span>
           </button>
         ))}
       </div>
